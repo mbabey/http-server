@@ -622,8 +622,13 @@ static int c_get_file_description_from_domain_socket(struct core_object *co, str
     // Store the information from the message in the child object.
     cmsghdr = CMSG_FIRSTHDR(&msghdr);
     child->client_fd_local = *((int *) CMSG_DATA(cmsghdr)); // The file description.
+    socklen = sizeof(child->client_addr);
     if (getpeername(child->client_fd_local, (struct sockaddr *) &child->client_addr, &socklen) == -1)
     {
+    
+    // NOLINTNEXTLINE(concurrency-mt-unsafe): No threads here
+    (void) fprintf(stdout, "Child %d on fd %d fucking up from %s:%d\n", getpid(), child->client_fd_local, inet_ntoa(child->client_addr.sin_addr),
+                   ntohs(child->client_addr.sin_port));
         return -1;
     }
     

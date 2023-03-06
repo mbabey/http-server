@@ -10,11 +10,10 @@
 #include <dlfcn.h>
 
 #define LOG_FILE_NAME "log.csv"
-#define LOG_OPEN_MODE "w" // Mode is set to truncate for independent results from each experiment.
+#define LOG_OPEN_MODE "w" // Mode is set to truncate for independent from results each experiment.
 
-// TODO: relative path should be changed to absolute.
 #ifdef __linux__
-#define DEFAULT_LIBRARY "../../one-to-one/cmake-build-debug/libone-to-one.so"
+#define DEFAULT_LIBRARY "../process-server/build/libprocess-server.so"
 #else
 #define DEFAULT_LIBRARY "../../one-to-one/cmake-build-debug/libone-to-one.dylib"
 #endif
@@ -92,8 +91,8 @@ int main(int argc, char *argv[])
     struct dc_env              *env;
     struct dc_error            *err;
     struct dc_application_info *info;
-    tracer = NULL;
-    //tracer = trace_reporter;
+    //tracer = NULL;
+    tracer = trace_reporter;
     err    = dc_error_create(false);
     env    = dc_env_create(err, false, tracer);
     info   = dc_application_info_create(env, err, "scalable_server");

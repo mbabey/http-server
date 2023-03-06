@@ -79,6 +79,8 @@ int setup_core_object(struct core_object *co, const struct dc_env *env, struct d
         (void) fprintf(stderr, "Fatal: could not initialize memory manager: %s\n", strerror(errno));
         return -1;
     }
+    co->mm->mm_add(co->mm, err);
+    co->mm->mm_add(co->mm, env);
     co->log_file = open_file(LOG_FILE_NAME, LOG_OPEN_MODE);
     if (!co->log_file)
     {
