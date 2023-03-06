@@ -570,7 +570,7 @@ static int c_receive_and_handle_messages(struct core_object *co, struct state_ob
         {
             return -1;
         }
-        if (errno != EINTR && c_recv_log_notify_parent_respond(co, so, child) == -1)
+        if (errno != EINTR && c_recv_log_notify_parent_respond(co, so, child) == -1) // TODO: remove the errno != EINTR logic
         {
             return -1;
         }
@@ -625,10 +625,6 @@ static int c_get_file_description_from_domain_socket(struct core_object *co, str
     socklen = sizeof(child->client_addr);
     if (getpeername(child->client_fd_local, (struct sockaddr *) &child->client_addr, &socklen) == -1)
     {
-    
-    // NOLINTNEXTLINE(concurrency-mt-unsafe): No threads here
-    (void) fprintf(stdout, "Child %d on fd %d fucking up from %s:%d\n", getpid(), child->client_fd_local, inet_ntoa(child->client_addr.sin_addr),
-                   ntohs(child->client_addr.sin_port));
         return -1;
     }
     
@@ -639,6 +635,7 @@ static int c_get_file_description_from_domain_socket(struct core_object *co, str
     return 0;
 }
 
+// TODO: change the innards of this function to handle new behaviours
 static int c_recv_log_notify_parent_respond(struct core_object *co, struct state_object *so, struct child_struct *child)
 {
     DC_TRACE(co->env);
