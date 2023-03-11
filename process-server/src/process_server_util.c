@@ -63,7 +63,7 @@ struct state_object *setup_process_state(struct memory_manager *mm)
 {
     struct state_object *so;
     
-    so = (struct state_object *) Mmm_calloc(1, sizeof(struct state_object), mm);
+    so = (struct state_object *) mm_calloc(1, sizeof(struct state_object), mm);
     if (!so) // Depending on whether more is added to this state object, this if clause may go.
     {
         return NULL;
@@ -174,7 +174,7 @@ int fork_child_processes(struct core_object *co, struct state_object *so)
 static int c_setup_child(struct core_object *co, struct state_object *so)
 {
     so->parent = NULL; // Here for clarity; will already be null.
-    so->child  = (struct child_struct *) Mmm_calloc(1, sizeof(struct child_struct), co->mm);
+    so->child  = (struct child_struct *) mm_calloc(1, sizeof(struct child_struct), co->mm);
     if (!so->child)
     {
         SET_ERROR(co->err);
@@ -192,7 +192,7 @@ static int c_setup_child(struct core_object *co, struct state_object *so)
 
 static int p_setup_parent(struct core_object *co, struct state_object *so)
 {
-    so->parent = (struct parent_struct *) Mmm_calloc(1, sizeof(struct parent_struct), co->mm);
+    so->parent = (struct parent_struct *) mm_calloc(1, sizeof(struct parent_struct), co->mm);
     if (!so->parent)
     {
         SET_ERROR(co->err);
@@ -276,7 +276,7 @@ void p_destroy_parent_state(struct core_object *co, struct state_object *so, str
         close_fd_report_undefined_error((parent->pollfds + sfd_num)->fd, "state of connection socket is undefined.");
     }
     
-    co->mm->mm_free(co->mm, parent);
+    mm_free(co->mm, parent);
     
     sem_close(so->c_to_p_pipe_sem_write);
     sem_close(so->domain_sems[READ]);
@@ -294,7 +294,7 @@ void c_destroy_child_state(struct core_object *co, struct state_object *so, stru
     close_fd_report_undefined_error(so->c_to_p_pipe_fds[WRITE], "state of pipe write is undefined.");
     close_fd_report_undefined_error(so->domain_fds[READ], "state of child domain socket is undefined.");
     
-    co->mm->mm_free(co->mm, child);
+    mm_free(co->mm, child);
 }
 
 void close_fd_report_undefined_error(int fd, const char *err_msg)
