@@ -10,20 +10,20 @@ set(CMAKE_C_STANDARD 17)
 set(SOURCE_DIR src)
 set(INCLUDE_DIR include)
 set(SOURCE_LIST
-        ${SOURCE_DIR}/api_functions.c
+        ${SOURCE_DIR}/core.c
+        ${SOURCE_DIR}/server_state.c
         ${SOURCE_DIR}/process_server.c
-        ${SOURCE_DIR}/server_setup_teardown.c
+        ${SOURCE_DIR}/process_server_util.c
         ${SOURCE_DIR}/main.c
-        ${SOURCE_DIR}/core_setup.c
         #=vvvv= SOURCE FOR DUMMY MAIN =vvvv=#
         )
 set(HEADER_LIST
+        ${INCLUDE_DIR}/core.h
+        ${INCLUDE_DIR}/error_handlers.h
         ${INCLUDE_DIR}/objects.h
         ${INCLUDE_DIR}/process_server.h
-        ${INCLUDE_DIR}/server_setup_teardown.h
-        ${INCLUDE_DIR}/core_setup.h
+        ${INCLUDE_DIR}/process_server_util.h
         ${INCLUDE_DIR}/server_state.h
-        ${INCLUDE_DIR}/error_handlers.h
         #=vvvv= INCLUDES FOR DUMMY MAIN =vvvv=#
         )
 
