@@ -4,7 +4,6 @@
 #include "../../api_functions.h"
 #include "objects.h"
 
-#include <dc_c/dc_stdio.h>
 #include <sys/types.h>
 
 #define DEFAULT_LIBRARY "../../one-to-one/cmake-build-debug/libone-to-one.dylib" // TODO: relative path should be changed to absolute.
@@ -34,7 +33,7 @@ struct api_functions
  * @param function_name name of the function the trace occurs in.
  * @param line_number the line the trace occurs in.
  */
-void trace_reporter(const struct dc_env *env, const char *file_name, const char *function_name, size_t line_number);
+void trace_reporter(const char *file_name, const char *function_name, size_t line_number);
 
 /**
  * setup_core_object
@@ -49,8 +48,7 @@ void trace_reporter(const struct dc_env *env, const char *file_name, const char 
  * @param ip_addr the ip address to listen on
  * @return 0 on success. On failure, -1 and set errno.
  */
-int setup_core_object(struct core_object *co, const struct dc_env *env, struct dc_error *err, in_port_t port_num,
-                      const char *ip_addr);
+int setup_core_object(struct core_object *co, const in_port_t port_num, const char *ip_addr);
 
 /**
  * get_api
