@@ -1,4 +1,4 @@
-#include "../../core/include/util.h"
+#include "../include/core_setup.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -9,19 +9,10 @@ int main(int argc, char **argv)
     int                next_state;
     int                run;
     struct core_object co;
-    struct dc_env      *env;
-    struct dc_error    *err;
-    dc_env_tracer      tracer;
-    
-//    tracer = NULL;
-    tracer = trace_reporter;
-    
-    err = dc_error_create(true);
-    env = dc_env_create(err, false, tracer);
     
     char *end;
     
-    next_state = setup_core_object(&co, env, err, strtol(argv[2], &end, 10), argv[1]);
+    next_state = setup_core_object(&co, strtol(argv[2], &end, 10), argv[1]);
     if (next_state == -1)
     {
         return EXIT_FAILURE;

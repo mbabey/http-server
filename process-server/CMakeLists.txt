@@ -12,17 +12,19 @@ set(INCLUDE_DIR include)
 set(SOURCE_LIST
         ${SOURCE_DIR}/api_functions.c
         ${SOURCE_DIR}/process_server.c
-        ${SOURCE_DIR}/setup_teardown.c
+        ${SOURCE_DIR}/server_setup_teardown.c
         ${SOURCE_DIR}/main.c
-        ${SOURCE_DIR}/util.c
+        ${SOURCE_DIR}/core_setup.c
         #=vvvv= SOURCE FOR DUMMY MAIN =vvvv=#
         )
 set(HEADER_LIST
         ${INCLUDE_DIR}/objects.h
         ${INCLUDE_DIR}/process_server.h
-        ${INCLUDE_DIR}/setup_teardown.h
-        ${INCLUDE_DIR}/util.h
-        ../api_functions.h
+        ${INCLUDE_DIR}/server_setup_teardown.h
+        ${INCLUDE_DIR}/core_setup.h
+        ${INCLUDE_DIR}/server_state.h
+        ${INCLUDE_DIR}/error_handlers.h
+        #=vvvv= INCLUDES FOR DUMMY MAIN =vvvv=#
         )
 
 set(SANITIZE TRUE)

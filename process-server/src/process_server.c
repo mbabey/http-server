@@ -1,6 +1,6 @@
 #include "../include/objects.h"
 #include "../include/process_server.h"
-#include "../include/setup_teardown.h"
+#include "../include/server_setup_teardown.h"
 
 #include <arpa/inet.h>
 #include <dc_env/env.h>
@@ -229,11 +229,9 @@ static int c_inform_parent_recv_finished(struct core_object *co, struct state_ob
 
 int setup_process_server(struct core_object *co, struct state_object *so)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     // Set up the headers for the log file.
-    (void) fprintf(co->log_file,
-                   "process id,local file descriptor,parent file descriptor,ipv4 address,port number,bytes read,start timestamp,end timestamp,elapsed time (s),time index\n");
     
     so = setup_process_state(co->mm);
     if (!so)
@@ -260,7 +258,7 @@ int setup_process_server(struct core_object *co, struct state_object *so)
 
 int run_process_server(struct core_object *co, struct state_object *so)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     // In parent, child will be NULL. In child, parent will be NULL. This behaviour can be used to identify if child or parent.
     if (so->parent)
@@ -282,7 +280,7 @@ int run_process_server(struct core_object *co, struct state_object *so)
 
 static int p_run_poll_loop(struct core_object *co, struct state_object *so, struct parent_struct *parent)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     struct sigaction sigint;
     int              poll_status;
     struct pollfd    *pollfds;
@@ -356,7 +354,7 @@ static void end_gogo_handler(int signal)
 
 static int p_accept_new_connection(struct core_object *co, struct parent_struct *parent, struct pollfd *pollfds)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     int       new_cfd;
     size_t    pollfd_index;
     socklen_t sockaddr_size;
@@ -407,7 +405,7 @@ static size_t p_get_pollfd_index(const struct pollfd *pollfds)
 
 static int p_read_pipe_reenable_fd(struct core_object *co, struct state_object *so, struct pollfd *pollfds)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     int     fd;
     ssize_t bytes_read;
     
@@ -433,7 +431,7 @@ static int p_read_pipe_reenable_fd(struct core_object *co, struct state_object *
 
 static int p_handle_socket_action(struct core_object *co, struct state_object *so, struct pollfd *pollfds)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     struct pollfd *pollfd;
     
     FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS
@@ -461,7 +459,7 @@ static int p_handle_socket_action(struct core_object *co, struct state_object *s
 
 static int p_send_to_child(struct core_object *co, struct state_object *so, struct pollfd *active_pollfd)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     ssize_t        bytes_sent;
     struct msghdr  msghdr;
     struct iovec   iovec;
@@ -508,7 +506,7 @@ static int p_send_to_child(struct core_object *co, struct state_object *so, stru
 static void p_remove_connection(struct core_object *co, struct parent_struct *parent,
                                 struct pollfd *pollfd, size_t conn_index, struct pollfd *listen_pollfd)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     close_fd_report_undefined_error(pollfd->fd, "state of client socket is undefined.");
     
@@ -530,7 +528,7 @@ static void p_remove_connection(struct core_object *co, struct parent_struct *pa
 
 static int c_run_child_process(struct core_object *co, struct state_object *so)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     pid_t            pid;
     struct sigaction sigint;
     
@@ -559,7 +557,7 @@ static int c_run_child_process(struct core_object *co, struct state_object *so)
 
 static int c_receive_and_handle_messages(struct core_object *co, struct state_object *so, struct child_struct *child)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     while (GOGO_PROCESS)
     {
@@ -584,7 +582,7 @@ static int c_receive_and_handle_messages(struct core_object *co, struct state_ob
 static int c_get_file_description_from_domain_socket(struct core_object *co, struct state_object *so,
                                                      struct child_struct *child)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     ssize_t        bytes_recv;
     struct msghdr  msghdr;
@@ -638,7 +636,7 @@ static int c_get_file_description_from_domain_socket(struct core_object *co, str
 // TODO: change the innards of this function to handle new behaviours
 static int c_recv_log_notify_parent_respond(struct core_object *co, struct state_object *so, struct child_struct *child)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     ssize_t  bytes;
     char     *buffer;
     uint32_t bytes_to_read;
@@ -698,7 +696,7 @@ static int c_recv_log_notify_parent_respond(struct core_object *co, struct state
 static int c_get_message_length(struct core_object *co, const struct child_struct *child,
                                 char **buffer, uint32_t *bytes_to_read)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     size_t  buffer_size;
     ssize_t bytes;
     
@@ -764,7 +762,7 @@ static int c_log(struct core_object *co, struct state_object *so, struct child_s
 
 static int c_inform_parent_recv_finished(struct core_object *co, struct state_object *so, struct child_struct *child)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     ssize_t bytes_written;
     
     if (sem_wait(so->c_to_p_pipe_sem_write) == -1) // Wait for the pipe write semaphore.
@@ -784,7 +782,7 @@ static int c_inform_parent_recv_finished(struct core_object *co, struct state_ob
 
 void destroy_process_state(struct core_object *co, struct state_object *so)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     if (so->parent)
     {

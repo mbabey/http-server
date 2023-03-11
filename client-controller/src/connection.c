@@ -1,6 +1,6 @@
 #include "connection.h"
 
-#include <util.h>
+#include <core_setup.h>
 
 #include <unistd.h>
 #include <string.h>

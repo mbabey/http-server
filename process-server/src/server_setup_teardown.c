@@ -1,4 +1,4 @@
-#include "../include/setup_teardown.h"
+#include "../include/server_setup_teardown.h"
 
 #include <arpa/inet.h>
 #include <dc_env/env.h>
@@ -81,7 +81,8 @@ struct state_object *setup_process_state(struct memory_manager *mm)
 
 int open_pipe_semaphores_domain_sockets(struct core_object *co, struct state_object *so)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
+    
     
     // NOLINTNEXTLINE(android-cloexec-pipe): Intentional pipe leakage into child processes
     if (pipe(so->c_to_p_pipe_fds) == -1) // Open pipe.
@@ -104,7 +105,7 @@ int open_pipe_semaphores_domain_sockets(struct core_object *co, struct state_obj
 
 static int open_semaphores(struct core_object *co, struct state_object *so)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     sem_t *pipe_write_sem;
     sem_t *domain_read_sem;
     sem_t *domain_write_sem;
@@ -224,7 +225,7 @@ static int p_setup_parent(struct core_object *co, struct state_object *so)
 static int p_open_process_server_for_listen(struct core_object *co, struct parent_struct *parent,
                                             struct sockaddr_in *listen_addr)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     int fd;
     
     fd = socket(PF_INET, SOCK_STREAM, 0); // NOLINT(android-cloexec-socket): SOCK_CLOEXEC dne
@@ -257,7 +258,7 @@ static int p_open_process_server_for_listen(struct core_object *co, struct paren
 
 void p_destroy_parent_state(struct core_object *co, struct state_object *so, struct parent_struct *parent)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     int status;
     
     FOR_EACH_CHILD_c_IN_CHILD_PIDS // Send signals to child processes real quick.
@@ -291,7 +292,7 @@ void p_destroy_parent_state(struct core_object *co, struct state_object *so, str
 
 void c_destroy_child_state(struct core_object *co, struct state_object *so, struct child_struct *child)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     close_fd_report_undefined_error(so->c_to_p_pipe_fds[WRITE], "state of pipe write is undefined.");
     close_fd_report_undefined_error(so->domain_fds[READ], "state of child domain socket is undefined.");
     

@@ -1,7 +1,7 @@
 #ifndef SCALABLE_SERVER_UTIL_H
 #define SCALABLE_SERVER_UTIL_H
 
-#include "../../api_functions.h"
+#include "server_state.h"
 #include "objects.h"
 
 #include <sys/types.h>

@@ -1,9 +1,9 @@
-#include "../../api_functions.h"
+#include "server_state.h"
 #include "../include/process_server.h"
 
 int initialize_server(struct core_object *co)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     if (setup_process_server(co, co->so) == -1)
     {
@@ -15,7 +15,7 @@ int initialize_server(struct core_object *co)
 
 int run_server(struct core_object *co)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     if (run_process_server(co, co->so) == -1)
     {
@@ -27,7 +27,7 @@ int run_server(struct core_object *co)
 
 int close_server(struct core_object *co)
 {
-    DC_TRACE(co->env);
+    PRINT_STACK_TRACE(co->tracer);
     
     destroy_process_state(co, co->so);
     

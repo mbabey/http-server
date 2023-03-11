@@ -80,7 +80,6 @@ struct core_object {
     TRACER_FUNCTION_AS(tracer);
     struct error_saver err;
     struct memory_manager *mm;
-    
     struct sockaddr_in listen_addr;
     
     struct state_object *so;
