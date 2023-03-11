@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(process-server
+project(http-server
         VERSION 0.0.1
         DESCRIPTION ""
         LANGUAGES C)
@@ -119,7 +119,7 @@ set(DOXYGEN_QUIET YES)
 doxygen_add_docs(doxygen
         ${HEADER_LIST}
         WORKING_DIRECTORY ..
-        COMMENT "Generating Doxygen documentation for process-server")
+        COMMENT "Generating Doxygen documentation for http-server")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CLANG_TIDY_CHECKS "*")
@@ -146,16 +146,16 @@ set(CMAKE_C_CLANG_TIDY clang-tidy -checks=${CLANG_TIDY_CHECKS};--quiet)
 
 #========= vvv COMPILE AS LIBRARY vvv =========#
 
-#add_library(process-server SHARED ${SOURCE_LIST} ${HEADER_LIST})
-#target_include_directories(process-server PRIVATE include/process-server)
-#target_include_directories(process-server PRIVATE /usr/local/include)
-#target_link_directories(process-server PRIVATE /usr/local/lib)
+#add_library(http-server SHARED ${SOURCE_LIST} ${HEADER_LIST})
+#target_include_directories(http-server PRIVATE include/http-server)
+#target_include_directories(http-server PRIVATE /usr/local/include)
+#target_link_directories(http-server PRIVATE /usr/local/lib)
 
 #if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#    target_include_directories(process-server PRIVATE /usr/include)
+#    target_include_directories(http-server PRIVATE /usr/include)
 #endif ()
 
-#set_target_properties(process-server PROPERTIES
+#set_target_properties(http-server PROPERTIES
 #        VERSION ${PROJECT_VERSION}
 #        SOVERSION ${PROJECT_VERSION_MAJOR})
 
@@ -170,19 +170,19 @@ set(CMAKE_C_CLANG_TIDY clang-tidy -checks=${CLANG_TIDY_CHECKS};--quiet)
 #set(INSTALL_LIB_DIR lib${LIBSUFFIX} CACHE PATH "Installation directory for libraries")
 #mark_as_advanced(INSTALL_LIB_DIR)
 
-#install(TARGETS process-server LIBRARY DESTINATION ${INSTALL_LIB_DIR})
-#install(FILES ${HEADER_LIST} DESTINATION include/process-server)
+#install(TARGETS http-server LIBRARY DESTINATION ${INSTALL_LIB_DIR})
+#install(FILES ${HEADER_LIST} DESTINATION include/http-server)
 
 #========= ^^^ COMPILE AS LIBRARY ^^^ =========#
 #========= vvv COMPILE AS EXECUTABLE vvv =========#
 
-add_executable(process-server ${SOURCE_LIST})
-target_include_directories(process-server PRIVATE /usr/local/include)
+add_executable(http-server ${SOURCE_LIST})
+target_include_directories(http-server PRIVATE /usr/local/include)
 
 #========= ^^^ COMPILE AS EXECUTABLE ^^^ =========#
 
-add_dependencies(process-server doxygen)
+add_dependencies(http-server doxygen)
 
 find_library(MEM_MANAGER mem_manager REQUIRED)
 
-target_link_libraries(process-server PUBLIC ${MEM_MANAGER})
+target_link_libraries(http-server PUBLIC ${MEM_MANAGER})
