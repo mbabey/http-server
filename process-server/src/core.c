@@ -1,12 +1,11 @@
-#include "objects.h"
-#include "core.h"
+#include "../include/core.h"
 
 #include <arpa/inet.h>
-#include <mem_manager/manager.h>
-#include <string.h>
-#include <getopt.h>
 #include <ctype.h>
+#include <getopt.h>
+#include <mem_manager/manager.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define OPTS_LIST "i:p:t"
 #define USAGE_MESSAGE                                                                           \

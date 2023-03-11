@@ -1,4 +1,5 @@
 #include "../include/core.h"
+#include "../include/server_state.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +43,7 @@ int main(int argc, char **argv)
                 
                 pid = getpid();
                 // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
-                (void) fprintf(stderr, "Fatal: error during server %d runtime: ", pid);
+                (void) fprintf(stderr, "Fatal: error during process %d runtime: ", pid);
                 GET_ERROR(co.err);
                 next_state = close_server(&co);
                 break;

@@ -1,18 +1,11 @@
 #include "../include/process_server_util.h"
 
 #include <arpa/inet.h>
-#include <dc_env/env.h>
+#include <fcntl.h>
 #include <mem_manager/manager.h>
+#include <semaphore.h>
 #include <signal.h>
 #include <string.h>
-
-#if defined(__unix__) || defined(__unix) || defined(unix)
-#include <semaphore.h>
-#include <fcntl.h>
-#elif defined(__APPLE__) && defined(__MACH__)
-#include <sys/semaphore.h>
-#endif
-
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -83,10 +76,10 @@ int open_pipe_semaphores_domain_sockets(struct core_object *co, struct state_obj
 {
     PRINT_STACK_TRACE(co->tracer);
     
-    
     // NOLINTNEXTLINE(android-cloexec-pipe): Intentional pipe leakage into child processes
     if (pipe(so->c_to_p_pipe_fds) == -1) // Open pipe.
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -97,6 +90,7 @@ int open_pipe_semaphores_domain_sockets(struct core_object *co, struct state_obj
     
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, so->domain_fds) == -1) // lol I love linux
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -120,8 +114,7 @@ static int open_semaphores(struct core_object *co, struct state_object *so)
         || domain_read_sem == SEM_FAILED || domain_write_sem == SEM_FAILED
         || log_sem == SEM_FAILED)
     {
-        int err_save;
-        err_save = errno;
+        SET_ERROR(co->err);
         // Closing an unopened semaphore will return -1 and set errno = EINVAL, which can be ignored.
         sem_close(pipe_write_sem);
         sem_close(domain_read_sem);
@@ -132,7 +125,6 @@ static int open_semaphores(struct core_object *co, struct state_object *so)
         sem_unlink(DOMAIN_READ_SEM_NAME);
         sem_unlink(DOMAIN_WRITE_SEM_NAME);
         sem_unlink(LOG_SEM_NAME);
-        errno = err_save;
         return -1;
     }
     
@@ -154,6 +146,7 @@ int fork_child_processes(struct core_object *co, struct state_object *so)
         pid = fork();
         if (pid == -1)
         {
+            SET_ERROR(co->err);
             return -1; // will go to ERROR state.
         }
         so->child_pids[c] = pid;
@@ -184,6 +177,7 @@ static int c_setup_child(struct core_object *co, struct state_object *so)
     so->child  = (struct child_struct *) Mmm_calloc(1, sizeof(struct child_struct), co->mm);
     if (!so->child)
     {
+        SET_ERROR(co->err);
         return -1; // Will go to ERROR state in child process.
     }
     
@@ -201,6 +195,7 @@ static int p_setup_parent(struct core_object *co, struct state_object *so)
     so->parent = (struct parent_struct *) Mmm_calloc(1, sizeof(struct parent_struct), co->mm);
     if (!so->parent)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     so->child = NULL; // Here for clarity; will already be null.
@@ -231,17 +226,20 @@ static int p_open_process_server_for_listen(struct core_object *co, struct paren
     fd = socket(PF_INET, SOCK_STREAM, 0); // NOLINT(android-cloexec-socket): SOCK_CLOEXEC dne
     if (fd == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
     if (bind(fd, (struct sockaddr *) listen_addr, sizeof(struct sockaddr_in)) == -1)
     {
+        SET_ERROR(co->err);
         (void) close(fd);
         return -1;
     }
     
     if (listen(fd, CONNECTION_QUEUE) == -1)
     {
+        SET_ERROR(co->err);
         (void) close(fd);
         return -1;
     }

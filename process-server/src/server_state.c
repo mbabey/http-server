@@ -1,5 +1,5 @@
-#include "server_state.h"
 #include "../include/process_server.h"
+#include "../include/server_state.h"
 
 int initialize_server(struct core_object *co)
 {

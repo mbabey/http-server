@@ -1,10 +1,7 @@
 #ifndef PROCESS_SERVER_CORE_H
 #define PROCESS_SERVER_CORE_H
 
-#include "server_state.h"
 #include "objects.h"
-
-#include <sys/types.h>
 
 /**
  * setup_core_object

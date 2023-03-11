@@ -189,6 +189,7 @@ int setup_process_server(struct core_object *co, struct state_object *so)
     so = setup_process_state(co->mm);
     if (!so)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -241,10 +242,12 @@ static int p_run_poll_loop(struct core_object *co, struct state_object *so, stru
     
     if (setup_signal_handler(&sigint, SIGINT) == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     if (setup_signal_handler(&sigint, SIGTERM) == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -256,6 +259,7 @@ static int p_run_poll_loop(struct core_object *co, struct state_object *so, stru
         poll_status = poll(pollfds, nfds, -1);
         if (poll_status == -1)
         {
+            SET_ERROR(co->err);
             return (errno == EINTR) ? 0 : -1;
         }
         
@@ -319,6 +323,7 @@ static int p_accept_new_connection(struct core_object *co, struct parent_struct 
     new_cfd = accept(pollfds->fd, (struct sockaddr *) &parent->client_addrs[pollfd_index - 2], &sockaddr_size);
     if (new_cfd == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -368,6 +373,7 @@ static int p_read_pipe_reenable_fd(struct core_object *co, struct state_object *
     
     if (bytes_read == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -434,6 +440,7 @@ static int p_send_to_child(struct core_object *co, struct state_object *so, stru
     cmsghdr = CMSG_FIRSTHDR(&msghdr);
     if (!cmsghdr)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -444,11 +451,13 @@ static int p_send_to_child(struct core_object *co, struct state_object *so, stru
     
     if (sem_wait(so->domain_sems[WRITE]) == -1)
     {
+        SET_ERROR(co->err);
         return (errno == EINTR) ? 0 : -1;
     }
     bytes_sent = sendmsg(so->domain_fds[WRITE], &msghdr, 0); // Send the msghdr.
     if (bytes_sent == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     sem_post(so->domain_sems[READ]);
@@ -491,10 +500,12 @@ static int c_run_child_process(struct core_object *co, struct state_object *so)
     
     if (setup_signal_handler(&sigint, SIGINT) == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     if (setup_signal_handler(&sigint, SIGTERM) == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -528,7 +539,6 @@ static int c_receive_and_handle_messages(struct core_object *co, struct state_ob
     
         if (c_inform_parent_recv_finished(co, so, child) == -1)
         {
-            SET_ERROR(co->err);
             return -1;
         }
         
@@ -564,6 +574,7 @@ static int c_get_file_description_from_domain_socket(struct core_object *co, str
     
     if (sem_wait(so->domain_sems[READ]) == -1) // Wait for the domain socket read semaphore.
     {
+        SET_ERROR(co->err);
         return (errno == EINTR) ? 0 : -1;
     }
     
@@ -573,6 +584,7 @@ static int c_get_file_description_from_domain_socket(struct core_object *co, str
     
     if (bytes_recv == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -582,6 +594,7 @@ static int c_get_file_description_from_domain_socket(struct core_object *co, str
     socklen = sizeof(child->client_addr);
     if (getpeername(child->client_fd_local, (struct sockaddr *) &child->client_addr, &socklen) == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -599,6 +612,7 @@ static int c_inform_parent_recv_finished(struct core_object *co, struct state_ob
     
     if (sem_wait(so->c_to_p_pipe_sem_write) == -1) // Wait for the pipe write semaphore.
     {
+        SET_ERROR(co->err);
         return (errno == EINTR) ? 0 : -1;
     }
     
@@ -606,6 +620,7 @@ static int c_inform_parent_recv_finished(struct core_object *co, struct state_ob
     
     if (bytes_written == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
