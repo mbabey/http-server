@@ -20,9 +20,9 @@
 /**
  * parse_args
  * <p>
- * Parse command line arguments and assign state variables accordingly.
+ * Parse command line arguments and assign core object variables accordingly.
  * </p>
- * @param co the state object
+ * @param co the core object
  * @param argc the argument count
  * @param argv the argument vector
  * @return 0 on success, -1 and set errno on failure
@@ -84,7 +84,7 @@ int setup_core_object(struct core_object *co, int argc, char **argv)
     PRINT_STACK_TRACE(co->tracer);
     memset(co, 0, sizeof(struct core_object));
     
-    co->mm  = init_mem_manager();
+    co->mm = init_mem_manager();
     if (!co->mm)
     {
         SET_ERROR(co->err);
@@ -105,6 +105,7 @@ static int parse_args(struct core_object *co, int argc, char **argv)
     int        c;
     const char *port_num_str;
     const char *ip_addr_str;
+    int        addr_err;
     
     port_num_str = NULL;
     ip_addr_str  = NULL;
@@ -139,6 +140,8 @@ static int parse_args(struct core_object *co, int argc, char **argv)
                     // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
                     (void) fprintf(stderr, "Unknown option character \'\\x%x\'.\n", optopt);
                 }
+                // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
+                (void) fprintf(stdout, USAGE_MESSAGE);
                 break;
             }
             default:
@@ -147,8 +150,6 @@ static int parse_args(struct core_object *co, int argc, char **argv)
             }
         }
     }
-    
-    int addr_err;
     
     addr_err = parse_ip_and_port(&co->listen_addr, port_num_str, ip_addr_str, co->tracer);
     if (addr_err)

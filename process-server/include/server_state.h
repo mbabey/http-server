@@ -18,20 +18,12 @@ enum Server_States {
 };
 
 /**
- * api
- * <p>
- * Definition of an API function pointer.
- * </p>
- */
-typedef int (*api) (struct core_object * co);
-
-/**
  * initialize_server
  * <p>
  * Initialize the state object and set up the server to listen for connections.
  * Fill fields in the core_object, open the listening socket, and set up the state.
  * </p>
- * @param co the core data object
+ * @param co the core object
  * @return RUN_SERVER. Set errno and return ERROR on failure.
  */
 int initialize_server(struct core_object *co);
@@ -42,7 +34,7 @@ int initialize_server(struct core_object *co);
  * Run the server. Accept new connections, handle messages, and close connections
  * as necessary.
  * </p>
- * @param co the core data object
+ * @param co the core object
  * @return CLOSE_SERVER on success. Set errno and return ERROR on failure.
  */
 int run_server(struct core_object *co);
