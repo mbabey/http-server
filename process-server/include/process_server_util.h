@@ -1,5 +1,5 @@
-#ifndef PROCESS_SERVER_SERVER_SETUP_TEARDOWN_H
-#define PROCESS_SERVER_SERVER_SETUP_TEARDOWN_H
+#ifndef PROCESS_SERVER_PROCESS_SERVER_UTIL_H
+#define PROCESS_SERVER_PROCESS_SERVER_UTIL_H
 
 #include "objects.h"
 
@@ -72,4 +72,4 @@ void c_destroy_child_state(struct core_object *co, struct state_object *so, stru
  */
 void close_fd_report_undefined_error(int fd, const char *err_msg);
 
-#endif //PROCESS_SERVER_SERVER_SETUP_TEARDOWN_H
+#endif //PROCESS_SERVER_PROCESS_SERVER_UTIL_H

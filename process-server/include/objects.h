@@ -1,5 +1,5 @@
-#ifndef SCALABLE_SERVER_PROCESS_OBJECTS_H
-#define SCALABLE_SERVER_PROCESS_OBJECTS_H
+#ifndef PROCESS_SERVER_OBJECTS_H
+#define PROCESS_SERVER_OBJECTS_H
 
 #include "error_handlers.h"
 
@@ -120,4 +120,4 @@ struct child_struct
     struct sockaddr_in client_addr;
 };
 
-#endif //SCALABLE_SERVER_PROCESS_OBJECTS_H
+#endif //PROCESS_SERVER_OBJECTS_H

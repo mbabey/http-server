@@ -1,7 +1,7 @@
 #include "../include/state.h"
 #include "connection.h"
 
-#include <core_setup.h>
+#include <core.h>
 
 #include <string.h>
 #include <dc_application/application.h>

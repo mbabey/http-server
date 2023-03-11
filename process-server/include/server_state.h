@@ -1,5 +1,5 @@
-#ifndef SCALABLE_SERVER_API_FUNCTIONS_H
-#define SCALABLE_SERVER_API_FUNCTIONS_H
+#ifndef PROCESS_SERVER_SERVER_STATE_H
+#define PROCESS_SERVER_SERVER_STATE_H
 
 #include "objects.h"
 
@@ -57,4 +57,4 @@ int run_server(struct core_object *co);
  */
 int close_server(struct core_object *co);
 
-#endif //SCALABLE_SERVER_API_FUNCTIONS_H
+#endif //PROCESS_SERVER_SERVER_STATE_H

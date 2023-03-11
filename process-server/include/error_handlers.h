@@ -1,5 +1,5 @@
-#ifndef CHAT_TEST_SADDLE_ERROR_HANDLERS_H
-#define CHAT_TEST_SADDLE_ERROR_HANDLERS_H
+#ifndef PROCESS_SERVER_ERROR_HANDLERS_H
+#define PROCESS_SERVER_ERROR_HANDLERS_H
 
 #include <errno.h>
 #include <stdio.h>
@@ -23,4 +23,4 @@ struct error_saver {
     int error_number;
 };
 
-#endif //CHAT_TEST_SADDLE_ERROR_HANDLERS_H
+#endif //PROCESS_SERVER_ERROR_HANDLERS_H

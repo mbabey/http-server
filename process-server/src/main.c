@@ -1,4 +1,4 @@
-#include "../include/core_setup.h"
+#include "../include/core.h"
 
 #include <stdlib.h>
 #include <string.h>
