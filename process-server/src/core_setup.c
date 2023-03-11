@@ -10,14 +10,12 @@
 
 #define OPTS_LIST "i:p:t"
 #define USAGE_MESSAGE                                                                           \
-    "usage: ./chat-test-saddle -l <server | client> -i <ip address> -p <port number> [-t]\n"    \
-    "-l <server | client>, whether to run the test server or test client\n"                     \
+    "usage: http-server -i <ip address> -p <port number> [-t]\n"                                \
     "-i <ip address>, if server selected for -l, will run the server at this ip address.\n"     \
     "\tif client selected for -l, will connect to a server at this ip address.\n"               \
     "-p <port number>, if server selected for -l, will run the server at this port number.\n"   \
     "\tif client selected for -l, will connect to a server at this port number.\n"              \
     "[-t], optionally trace the execution of the program.\n"
-
 
 /**
  * parse_args
