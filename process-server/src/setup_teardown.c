@@ -6,10 +6,10 @@
 #include <signal.h>
 #include <string.h>
 
-#ifdef __linux__
+#if defined(__unix__) || defined(__unix) || defined(unix)
 #include <semaphore.h>
 #include <fcntl.h>
-#else
+#elif defined(__APPLE__) && defined(__MACH__)
 #include <sys/semaphore.h>
 #endif
 

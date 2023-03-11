@@ -1,6 +1,5 @@
 #include "../../core/include/util.h"
 
-#include <dc_error/error.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
