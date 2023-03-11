@@ -10,9 +10,7 @@ int main(int argc, char **argv)
     int                run;
     struct core_object co;
     
-    char *end;
-    
-    next_state = setup_core_object(&co, strtol(argv[2], &end, 10), argv[1]);
+    next_state = setup_core_object(&co, argc, argv);
     if (next_state == -1)
     {
         return EXIT_FAILURE;
@@ -44,8 +42,8 @@ int main(int argc, char **argv)
                 
                 pid = getpid();
                 // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
-                (void) fprintf(stderr, "Fatal: error during server %d runtime: %d: %s\n",
-                               pid, errno, strerror(errno));
+                (void) fprintf(stderr, "Fatal: error during server %d runtime: ", pid);
+                GET_ERROR(co.err);
                 next_state = close_server(&co);
                 break;
             }

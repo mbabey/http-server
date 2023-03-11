@@ -24,18 +24,6 @@ struct api_functions
 };
 
 /**
- * trace_reporter
- * <p>
- * formatting function for trace reporting.
- * </p>
- * @param env pointer to a dc_env struct
- * @param file_name name of the file the trace occurs in.
- * @param function_name name of the function the trace occurs in.
- * @param line_number the line the trace occurs in.
- */
-void trace_reporter(const char *file_name, const char *function_name, size_t line_number);
-
-/**
  * setup_core_object
  * <p>
  * Zero the core_object. Setup other objects and attach them to the core_object.
@@ -48,7 +36,7 @@ void trace_reporter(const char *file_name, const char *function_name, size_t lin
  * @param ip_addr the ip address to listen on
  * @return 0 on success. On failure, -1 and set errno.
  */
-int setup_core_object(struct core_object *co, const in_port_t port_num, const char *ip_addr);
+int setup_core_object(struct core_object *co, int argc, char **argv);
 
 /**
  * get_api
