@@ -1,7 +1,7 @@
 #ifndef SCALABLE_SERVER_API_FUNCTIONS_H
 #define SCALABLE_SERVER_API_FUNCTIONS_H
 
-#include "./core/include/objects.h"
+#include "objects.h"
 
 /**
  * Server_States

@@ -1,9 +1,10 @@
 #ifndef SCALABLE_SERVER_PROCESS_OBJECTS_H
 #define SCALABLE_SERVER_PROCESS_OBJECTS_H
 
+#include "error_handlers.h"
+
 #include <semaphore.h>
 #include <poll.h>
-#include <stdio.h>
 #include <netinet/in.h>
 
 /**
@@ -39,22 +40,22 @@
 /**
 * Pipe write semaphore name.
 */
-#define PIPE_WRITE_SEM_NAME "/p_206a08" // Random hex to prevent collision of this filename with others.
+#define PIPE_WRITE_SEM_NAME "/p_2f6a08" // Random hex to prevent collision of this filename with others.
 
 /**
 * Domain socket read semaphore name.
 */
-#define DOMAIN_READ_SEM_NAME "/dr_206a08"
+#define DOMAIN_READ_SEM_NAME "/dr_2f6a08"
 
 /**
 * Domain socket write semaphore name.
 */
-#define DOMAIN_WRITE_SEM_NAME "/dw_206a08"
+#define DOMAIN_WRITE_SEM_NAME "/dw_2f6a08"
 
 /**
 * Log semaphore name.
 */
-#define LOG_SEM_NAME "/l_206a08"
+#define LOG_SEM_NAME "/l_2f6a08"
 
 /**
  * For each loop macro for looping over child processes.
@@ -76,11 +77,12 @@
  * </p>
  */
 struct core_object {
-    const struct dc_env *env;
-    struct dc_error *err;
+    TRACER_FUNCTION_AS(tracer);
+    struct error_saver err;
     struct memory_manager *mm;
-    FILE *log_file;
+    
     struct sockaddr_in listen_addr;
+    
     struct state_object *so;
 };
 

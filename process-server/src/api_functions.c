@@ -1,8 +1,6 @@
 #include "../../api_functions.h"
 #include "../include/process_server.h"
 
-#include <dc_env/env.h>
-
 int initialize_server(struct core_object *co)
 {
     DC_TRACE(co->env);
