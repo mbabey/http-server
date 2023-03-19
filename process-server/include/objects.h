@@ -40,7 +40,7 @@
 /**
 * Pipe write semaphore name.
 */
-#define PIPE_WRITE_SEM_NAME "/p_2f6a08" // Random hex to prevent collision of this filename with others.
+#define PIPE_WRITE_SEM_NAME "/pw_2f6a08" // Random hex to prevent collision of this filename with others.
 
 /**
 * Domain socket read semaphore name.
@@ -51,11 +51,6 @@
 * Domain socket write semaphore name.
 */
 #define DOMAIN_WRITE_SEM_NAME "/dw_2f6a08"
-
-/**
-* Log semaphore name.
-*/
-#define LOG_SEM_NAME "/l_2f6a08"
 
 /**
  * For each loop macro for looping over child processes.
@@ -95,7 +90,6 @@ struct state_object
     int                  c_to_p_pipe_fds[2];
     sem_t                *domain_sems[2];
     sem_t                *c_to_p_pipe_sem_write;
-    sem_t                *log_sem;
     struct parent_struct *parent;
     struct child_struct  *child;
 };
