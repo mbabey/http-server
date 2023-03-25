@@ -4,21 +4,6 @@
 #include <objects.h>
 
 /**
- * Represents a HTTP 1.0 header
- */
-struct http_header {
-    int version;
-};
-
-/**
- * Represents a HTTP 1.0 request
- */
-struct http_request {
-    struct http_header header;
-    char * body;
-};
-
-/**
  * init_http_request
  * <p>
  * Reads a HTTP 1.0 request from a client socket into a http_request struct.

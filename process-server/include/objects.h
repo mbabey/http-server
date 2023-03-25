@@ -8,6 +8,33 @@
 #include <netinet/in.h>
 
 /**
+ * HTTP 1.0 methods
+ */
+#define M_GET "GET"
+#define M_HEAD "HEAD"
+#define M_POST "POST"
+
+/**
+ * HTTP 1.0 headers
+ */
+#define H_ALLOW "Allow"
+#define H_AUTHORIZATION "Authorization"
+#define H_CONTENT_ENCODING "Content-Encoding"
+#define H_CONTENT_LENGTH "Content-Length"
+#define H_CONTENT_TYPE "Content-Type"
+#define H_DATE "Date"
+#define H_EXPIRES "Expires"
+#define H_FORM "Form"
+#define H_IF_MODIFIED_SINCE "If-Modified-Since"
+#define H_LAST_MODIFIED "Last-Modified"
+#define H_LOCATION "Location"
+#define H_PRAGMA "Pragma"
+#define H_REFERER "Referer"
+#define H_SERVER "Server"
+#define H_USER_AGENT "User-Agent"
+#define H_WWW_AUTHENTICATE "WWW-Authenticate"
+
+/**
  * The number of worker processes to be spawned to handle network requests.
  */
 #define NUM_CHILD_PROCESSES 8
@@ -112,6 +139,27 @@ struct child_struct
     int                client_fd_parent;
     int                client_fd_local;
     struct sockaddr_in client_addr;
+};
+
+/**
+ * Represents a HTTP 1.0 header
+ */
+struct http_header {
+    char * key;
+    char * value;
+};
+
+/**
+ * Represents a HTTP 1.0 request
+ */
+struct http_request {
+    size_t num_general_headers;
+    struct http_header * general_headers;
+    size_t num_request_headers;
+    struct http_header * request_headers;
+    size_t num_entity_headers;
+    struct http_header * entity_headers;
+    char * entity_body;
 };
 
 #endif //PROCESS_SERVER_OBJECTS_H

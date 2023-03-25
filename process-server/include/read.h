@@ -6,7 +6,7 @@
 /**
  * read_request
  * <p>
- * Reads an http 1.0 request from a client connection.
+ * Reads an HTTP 1.0 request from a client connection.
  * </p>
  * @param so the state object.
  * @return 0 on success, -1 on failure.
