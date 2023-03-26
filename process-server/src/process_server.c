@@ -1,6 +1,7 @@
 #include "../include/objects.h"
 #include "../include/process_server.h"
 #include "../include/process_server_util.h"
+#include "../include/response.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -572,6 +573,8 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     PRINT_STACK_TRACE(co->tracer);
     
     struct http_request request;
+    struct http_header  **headers;
+    char                *entity_body;
     
     // receive and parse http request
     
@@ -579,7 +582,10 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     // function here should set the status as a number
     
     // assemble and send http response
-    // this function takes the status and makes an appropriate response
+    if (assemble_send_response(co, headers, entity_body) == -1)
+    {
+        return -1;
+    }
     
     return 0;
 }
@@ -587,7 +593,7 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
 static int c_get_file_description_from_domain_socket(struct core_object *co, struct state_object *so,
                                                      struct child_struct *child)
 {
-    PRINT_STACK_TRACE(co->tracer);`\
+    PRINT_STACK_TRACE(co->tracer);
     
     ssize_t        bytes_recv;
     struct msghdr  msghdr;
