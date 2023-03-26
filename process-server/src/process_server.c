@@ -571,7 +571,11 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
 {
     PRINT_STACK_TRACE(co->tracer);
     
+    struct http_request request;
+    
     // receive and parse http request
+    
+    // handle some action dictated by the request
     
     // assemble and send http response
     
