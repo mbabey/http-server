@@ -181,4 +181,22 @@ struct http_request {
     char * entity_body;
 };
 
+/**
+ * HTTP Response status line.
+ */
+struct http_status_line {
+    char *version;
+    char *status_code;
+    char *reason_phrase;
+};
+
+/**
+ * HTTP Response.
+ */
+struct http_response {
+    struct http_status_line status_line;
+    struct http_header * headers;
+    const char *entity_body;
+};
+
 #endif //PROCESS_SERVER_OBJECTS_H
