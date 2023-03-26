@@ -59,7 +59,7 @@ static void assemble_status_line(struct core_object *co, struct http_response *r
  * @param entity_body_size the size of the entity body in the response
  * @return 0 on success, -1 and set error on failure.
  */
-static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer, struct http_response *src_response);
+static int serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *src_response);
 
 /**
  * get_header_size_bytes
@@ -199,7 +199,7 @@ static void assemble_status_line(struct core_object *co, struct http_response *r
 }
 
 
-static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer, struct http_response *src_response)
+static int serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *src_response)
 {
     PRINT_STACK_TRACE(co->tracer);
     
@@ -225,37 +225,37 @@ static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer,
     
     // Serialize the status line.
     // strcpy to avoid copying null byte.
-    strcpy((char *) (*dst_buffer + byte_offset), src_response->status_line.version);
+    strcpy((*dst_buffer + byte_offset), src_response->status_line.version);
     byte_offset += sizeof(src_response->status_line.version);
-    strcpy((char *) (*dst_buffer + byte_offset), SP_STR);
+    strcpy((*dst_buffer + byte_offset), SP_STR);
     byte_offset += SP_SIZE;
-    strcpy((char *) (*dst_buffer + byte_offset), src_response->status_line.status_code);
+    strcpy((*dst_buffer + byte_offset), src_response->status_line.status_code);
     byte_offset += sizeof(src_response->status_line.status_code);
-    strcpy((char *) (*dst_buffer + byte_offset), SP_STR);
+    strcpy((*dst_buffer + byte_offset), SP_STR);
     byte_offset += SP_SIZE;
-    strcpy((char *) (*dst_buffer + byte_offset), src_response->status_line.reason_phrase);
+    strcpy((*dst_buffer + byte_offset), src_response->status_line.reason_phrase);
     byte_offset += sizeof(src_response->status_line.reason_phrase);
-    strcpy((char *) (*dst_buffer + byte_offset), CRLF_STR);
+    strcpy((*dst_buffer + byte_offset), CRLF_STR);
     byte_offset += CRLF_SIZE;
     
     // Serialize the headers.
     headers = src_response->headers;
     for (; *headers; ++headers)
     {
-        strcpy((char *) (*dst_buffer + byte_offset), (*headers)->key);
+        strcpy((*dst_buffer + byte_offset), (*headers)->key);
         byte_offset += strlen((*headers)->key);
-        strcpy((char *) (*dst_buffer + byte_offset), COLON_SP_STR);
+        strcpy((*dst_buffer + byte_offset), COLON_SP_STR);
         byte_offset += COLON_SP_SIZE;
-        strcpy((char *) (*dst_buffer + byte_offset), (*headers)->value);
+        strcpy((*dst_buffer + byte_offset), (*headers)->value);
         byte_offset += strlen((*headers)->value);
-        strcpy((char *) (*dst_buffer + byte_offset), CRLF_STR);
+        strcpy((*dst_buffer + byte_offset), CRLF_STR);
         byte_offset += CRLF_SIZE;
     }
     
-    strcpy((char *) (*dst_buffer + byte_offset), CRLF_STR);
+    strcpy((*dst_buffer + byte_offset), CRLF_STR);
     byte_offset += CRLF_SIZE;
     
-    strcpy((char *) (*dst_buffer + byte_offset), src_response->entity_body);
+    strcpy((*dst_buffer + byte_offset), src_response->entity_body);
     
     return 0;
 }
