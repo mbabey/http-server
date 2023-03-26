@@ -1,6 +1,7 @@
 #include "../include/response.h"
 
-int assemble_send_response(struct core_object *co, struct state_object *so, int socket_fd)
+int assemble_send_response(struct core_object *co, struct state_object *so, int socket_fd,
+                           size_t status, const char **headers, const char *entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
     
@@ -16,3 +17,5 @@ int assemble_send_response(struct core_object *co, struct state_object *so, int 
     
     return 0;
 }
+
+static int assemble_status_line
