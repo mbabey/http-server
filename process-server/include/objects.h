@@ -7,6 +7,8 @@
 #include <poll.h>
 #include <netinet/in.h>
 
+#define HTTP_VERSION "HTTP/1.0" /** HTTP Version 1.0 */
+
 /**
  * HTTP 1.0 methods
  */
@@ -168,9 +170,9 @@ struct http_request {
  * HTTP Response status line.
  */
 struct http_status_line {
-    char *version;
-    char *status_code;
-    char *reason_phrase;
+    const char *version;
+    const char *status_code;
+    const char *reason_phrase;
 };
 
 /**

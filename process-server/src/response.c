@@ -1,5 +1,5 @@
 #include "../include/response.h"
-
+#include "../include/manager.h"
 
 /** HTTP 1.0 Status Codes and Reason Phrases */
 #define STATUS_CODE_OK                      "200"
@@ -67,5 +67,105 @@ int assemble_send_response(struct core_object *co, struct state_object *so, int 
 
 static int assemble_status_line(struct core_object *co, struct http_response *response, size_t status)
 {
-
+    PRINT_STACK_TRACE(co->tracer);
+    
+    response->status_line.version = HTTP_VERSION;
+    
+    switch (status)
+    {
+        case OK_200:
+        {
+            response->status_line.status_code = STATUS_CODE_OK;
+            response->status_line.reason_phrase = REASON_PHRASE_OK;
+            break;
+        }
+        case CREATED_201:
+        {
+            response->status_line.status_code = STATUS_CODE_CREATED;
+            response->status_line.reason_phrase = REASON_PHRASE_CREATED;
+            break;
+        }
+        case ACCEPTED_202:
+        {
+            response->status_line.status_code = STATUS_CODE_ACCEPTED;
+            response->status_line.reason_phrase = REASON_PHRASE_ACCEPTED;
+            break;
+        }
+        case NO_CONTENT_204:
+        {
+            response->status_line.status_code = STATUS_CODE_NO_CONTENT;
+            response->status_line.reason_phrase = REASON_PHRASE_NO_CONTENT;
+            break;
+        }
+        case MOVED_PERMANENTLY_301:
+        {
+            response->status_line.status_code = STATUS_CODE_MOVED_PERMANENTLY;
+            response->status_line.reason_phrase = REASON_PHRASE_MOVED_PERMANENTLY;
+            break;
+        }
+        case MOVED_TEMPORARILY_302:
+        {
+            response->status_line.status_code = STATUS_CODE_MOVED_TEMPORARILY;
+            response->status_line.reason_phrase = REASON_PHRASE_MOVED_TEMPORARILY;
+            break;
+        }
+        case NOT_MODIFIED_304:
+        {
+            response->status_line.status_code = STATUS_CODE_NOT_MODIFIED;
+            response->status_line.reason_phrase = REASON_PHRASE_NOT_MODIFIED;
+            break;
+        }
+        case BAD_REQUEST_400:
+        {
+            response->status_line.status_code = STATUS_CODE_BAD_REQUEST;
+            response->status_line.reason_phrase = REASON_PHRASE_BAD_REQUEST;
+            break;
+        }
+        case UNAUTHORIZED_401:
+        {
+            response->status_line.status_code = STATUS_CODE_UNAUTHORIZED;
+            response->status_line.reason_phrase = REASON_PHRASE_UNAUTHORIZED;
+            break;
+        }
+        case FORBIDDEN_403:
+        {
+            response->status_line.status_code = STATUS_CODE_FORBIDDEN;
+            response->status_line.reason_phrase = REASON_PHRASE_FORBIDDEN;
+            break;
+        }
+        case NOT_FOUND_404:
+        {
+            response->status_line.status_code = STATUS_CODE_NOT_FOUND;
+            response->status_line.reason_phrase = REASON_PHRASE_NOT_FOUND;
+            break;
+        }
+        // 500 is default, located at bottom of switch tree.
+        case NOT_IMPLEMENTED_501:
+        {
+            response->status_line.status_code = STATUS_CODE_NOT_IMPLEMENTED;
+            response->status_line.reason_phrase = REASON_PHRASE_NOT_IMPLEMENTED;
+            break;
+        }
+        case BAD_GATEWAY_502:
+        {
+            response->status_line.status_code = STATUS_CODE_BAD_GATEWAY;
+            response->status_line.reason_phrase = REASON_PHRASE_BAD_GATEWAY;
+            break;
+        }
+        case SERVICE_UNAVAILABLE_503:
+        {
+            response->status_line.status_code = STATUS_CODE_SERVICE_UNAVAILABLE;
+            response->status_line.reason_phrase = REASON_PHRASE_SERVICE_UNAVAILABLE;
+            break;
+        }
+        case INTERNAL_SERVER_ERROR_500:
+        default:
+        {
+            response->status_line.status_code = STATUS_CODE_INTERNAL_SERVER_ERROR;
+            response->status_line.reason_phrase = REASON_PHRASE_INTERNAL_SERVER_ERROR;
+            break;
+        }
+    }
+    
+    return 0;
 }
