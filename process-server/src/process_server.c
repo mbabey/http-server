@@ -572,17 +572,19 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
 {
     PRINT_STACK_TRACE(co->tracer);
     
-    struct http_request request;
+    size_t              status;
     struct http_header  **headers;
     char                *entity_body;
     
     // receive and parse http request
     
-    // handle some action dictated by the request
-    // function here should set the status as a number
+    // TODO: handle some action dictated by the request
+    // function here should set variable status as a value of enum StatusCodes
+    // function here should create a list of headers in **headers
+    // function here should create or an entity body or assign NULL to *entity_body
     
     // assemble and send http response
-    if (assemble_send_response(co, headers, entity_body) == -1)
+    if (assemble_send_response(co, child->client_fd_local, status, headers, entity_body) == -1)
     {
         return -1;
     }
