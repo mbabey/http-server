@@ -1,9 +1,9 @@
 #include "../include/core.h"
+#include "../include/manager.h"
 
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <getopt.h>
-#include <mem_manager/manager.h>
 #include <stdlib.h>
 #include <string.h>
 
