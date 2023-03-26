@@ -28,10 +28,11 @@ void destroy_http_request(struct http_request ** req, struct core_object * co);
  * <p>
  * Reads a HTTP 1.0 header from a client socket into a http_header struct.
  * </p>
+ * @param header_line a whole header line. Example: header_line = "Content-Type: application/json"
  * @param co the core object.
  * @return a pointer to a http_header struct on success. NULL on failure.
  */
-struct http_header * init_http_header(struct core_object * co);
+struct http_header * init_http_header(char * header_line, struct core_object * co);
 
 /**
  * destroy_http_header

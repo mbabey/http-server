@@ -17,7 +17,7 @@ struct http_request * init_http_request(struct core_object * co) {
 void destroy_http_request(struct http_request ** req, struct core_object * co) {
     if (*req) {
         // destroy request line
-        destroy_http_request_line(&(*req)->request_line, co);
+        destroy_http_request_line((*req)->request_line, co);
 
         // free general headers
         for (size_t i = 0; i < (*req)->num_general_headers; i++) {
@@ -41,7 +41,7 @@ void destroy_http_request(struct http_request ** req, struct core_object * co) {
     *req = NULL;
 }
 
-struct http_header * init_http_header(struct core_object * co) {
+struct http_header * init_http_header(char * header_line, struct core_object * co) {
 
     return 0;
 }
