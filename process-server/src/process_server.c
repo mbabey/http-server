@@ -571,13 +571,17 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
 {
     PRINT_STACK_TRACE(co->tracer);
     
+    // receive and parse http request
+    
+    // assemble and send http response
+    
     return 0;
 }
 
 static int c_get_file_description_from_domain_socket(struct core_object *co, struct state_object *so,
                                                      struct child_struct *child)
 {
-    PRINT_STACK_TRACE(co->tracer);
+    PRINT_STACK_TRACE(co->tracer);`\
     
     ssize_t        bytes_recv;
     struct msghdr  msghdr;
