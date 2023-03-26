@@ -576,8 +576,10 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     // receive and parse http request
     
     // handle some action dictated by the request
+    // function here should set the status as a number
     
     // assemble and send http response
+    // this function takes the status and makes an appropriate response
     
     return 0;
 }

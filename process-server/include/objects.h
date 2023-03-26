@@ -57,37 +57,28 @@
 #define FOR_EACH_CHILD_c_IN_CHILD_PIDS for (size_t c = 0; c < NUM_CHILD_PROCESSES; ++c) /** For each loop macro for looping over child processes. */
 #define FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS for (size_t p = 2; p < POLLFDS_SIZE; ++p)   /** For each loop macro for looping over socket pollfds. */
 
-/** HTTP 1.0 Status Codes and Reason Phrases */
-#define STATUS_CODE_OK                      "200"
-#define REASON_PHRASE_OK                    "OK"
-#define STATUS_CODE_CREATED                 "201"
-#define REASON_PHRASE_CREATED               "Created"
-#define STATUS_CODE_ACCEPTED                "202"
-#define REASON_PHRASE_ACCEPTED              "Accepted"
-#define STATUS_CODE_NO_CONTENT              "204"
-#define REASON_PHRASE_NO_CONTENT            "No Content"
-#define STATUS_CODE_MOVED_PERMANENTLY       "301"
-#define REASON_PHRASE_MOVED_PERMANENTLY     "Moved Permanently"
-#define STATUS_CODE_MOVED_TEMPORARILY       "302"
-#define REASON_PHRASE_MOVED_TEMPORARILY     "Moved Temporarily"
-#define STATUS_CODE_NOT_MODIFIED            "304"
-#define REASON_PHRASE_NOT_MODIFIED          "Not Modified"
-#define STATUS_CODE_BAD_REQUEST             "400"
-#define REASON_PHRASE_BAD_REQUEST           "Bad Request"
-#define STATUS_CODE_UNAUTHORIZED            "401"
-#define REASON_PHRASE_UNAUTHORIZED          "Unauthorized"
-#define STATUS_CODE_FORBIDDEN               "403"
-#define REASON_PHRASE_FORBIDDEN             "Forbidden"
-#define STATUS_CODE_NOT_FOUND               "404"
-#define REASON_PHRASE_NOT_FOUND             "Not Found"
-#define STATUS_CODE_INTERNAL_SERVER_ERROR   "500"
-#define REASON_PHRASE_INTERNAL_SERVER_ERROR "Internal Server Error"
-#define STATUS_CODE_NOT_IMPLEMENTED         "501"
-#define REASON_PHRASE_NOT_IMPLEMENTED       "Not Implemented"
-#define STATUS_CODE_BAD_GATEWAY             "502"
-#define REASON_PHRASE_BAD_GATEWAY           "Bad Gateway"
-#define STATUS_CODE_SERVICE_UNAVAILABLE     "503"
-#define REASON_PHRASE_SERVICE_UNAVAILABLE   "Service Unavailable"
+/** HTTP 1.0 Common Status Codes. */
+enum StatusCodes
+{
+    OK_200 = 200,
+    CREATED_201,
+    ACCEPTED_202,
+    NULL_203,
+    NO_CONTENT_204,
+    MOVED_PERMANENTLY_301 = 301,
+    MOVED_TEMPORARILY_302,
+    NULL_303,
+    NOT_MODIFIED_304,
+    BAD_REQUEST_400 = 400,
+    UNAUTHORIZED_401,
+    NULL_402,
+    FORBIDDEN_403,
+    NOT_FOUND_404,
+    INTERNAL_SERVER_ERROR_500 = 500,
+    NOT_IMPLEMENTED_501,
+    BAD_GATEWAY_502,
+    SERVICE_UNAVAILABLE_503
+};
 
 /**
  * core_object
