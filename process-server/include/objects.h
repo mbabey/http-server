@@ -7,6 +7,8 @@
 #include <poll.h>
 #include <netinet/in.h>
 
+#define VERSION "HTTP/1.0" /** HTTP Version 1.0 */
+
 /**
  * HTTP 1.0 methods
  */
@@ -17,22 +19,22 @@
 /**
  * HTTP 1.0 headers
  */
-#define H_ALLOW "Allow"
-#define H_AUTHORIZATION "Authorization"
-#define H_CONTENT_ENCODING "Content-Encoding"
-#define H_CONTENT_LENGTH "Content-Length"
-#define H_CONTENT_TYPE "Content-Type"
-#define H_DATE "Date"
-#define H_EXPIRES "Expires"
-#define H_FORM "Form"
-#define H_IF_MODIFIED_SINCE "If-Modified-Since"
-#define H_LAST_MODIFIED "Last-Modified"
-#define H_LOCATION "Location"
-#define H_PRAGMA "Pragma"
-#define H_REFERER "Referer"
-#define H_SERVER "Server"
-#define H_USER_AGENT "User-Agent"
-#define H_WWW_AUTHENTICATE "WWW-Authenticate"
+#define H_ALLOW "allow"
+#define H_AUTHORIZATION "authorization"
+#define H_CONTENT_ENCODING "content-encoding"
+#define H_CONTENT_LENGTH "content-length"
+#define H_CONTENT_TYPE "content-type"
+#define H_DATE "date"
+#define H_EXPIRES "expires"
+#define H_FROM "from"
+#define H_IF_MODIFIED_SINCE "if-modified-since"
+#define H_LAST_MODIFIED "last-modified"
+#define H_LOCATION "location"
+#define H_PRAGMA "pragma"
+#define H_REFERER "referer"
+#define H_SERVER "server"
+#define H_USER_AGENT "user-agent"
+#define H_WWW_AUTHENTICATE "www-authenticate"
 
 /**
  * HTTP 1.0 syntax
@@ -41,6 +43,7 @@
 #define LF '\n'
 #define SP ' '
 #define TERM '\0'
+#define COLON ':'
 
 /**
  * The number of worker processes to be spawned to handle network requests.
@@ -173,11 +176,13 @@ struct http_request_line {
 struct http_request {
     struct http_request_line * request_line;
     size_t num_general_headers;
-    struct http_header * general_headers;
+    struct http_header ** general_headers;
     size_t num_request_headers;
-    struct http_header * request_headers;
+    struct http_header ** request_headers;
     size_t num_entity_headers;
-    struct http_header * entity_headers;
+    struct http_header ** entity_headers;
+    size_t num_extension_headers;
+    struct http_header ** extension_headers;
     char * entity_body;
 };
 

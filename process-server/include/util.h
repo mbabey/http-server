@@ -29,4 +29,24 @@ int write_fully(int fd, void * data, size_t size);
  */
 int read_fully(int fd, void * data, size_t size);
 
+/**
+ * litlittok
+ * <p>
+ * Combination of strtok and strstr, tokenize with a multi character separator.
+ * </p>
+ * @param str the string to tokenize.
+ * @param sep the separator to use.
+ * @return the token when found, NULL when not.
+ */
+char * litlittok(char * str, char * sep);
+
+/**
+ * to_lower
+ * <p>
+ * Transforms a string to lowercase.
+ * </p>
+ * @param s the string to transform.
+ */
+void to_lower(char * s);
+
 #endif //POLL_SERVER_UTIL_H

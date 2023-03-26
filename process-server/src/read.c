@@ -2,22 +2,26 @@
 
 #include <request.h>
 #include <util.h>
+#include <manager.h>
 
 #include <stdlib.h>
-#include <mem_manager/manager.h>
 
 enum states{SUCCESS = 0, FAILURE = -1};
 
 /**
- * read_request_line
- * <p>
- * Reads the Request-Line section of an HTTP 1.0 request from a client connection.
- * </p>
- * @param fd the client connection.
- * @param co the core object.
- * @return 0 on success, -1 on failure.
+ * HTTP 1.0 general headers
  */
-static int read_request_line(int fd, struct core_object * co);
+const char * http_general_headers[2] = {H_DATE, H_PRAGMA};
+
+/**
+ * HTTP 1.0 request headers
+ */
+const char * http_request_headers[5] = {H_AUTHORIZATION, H_FROM, H_IF_MODIFIED_SINCE, H_REFERER, H_USER_AGENT};
+
+/**
+ * HTTP 1.0 entity headers
+ */
+const char * http_entity_headers[6] = {H_ALLOW, H_CONTENT_ENCODING, H_CONTENT_LENGTH, H_CONTENT_TYPE, H_EXPIRES, H_LAST_MODIFIED};
 
 /**
  * read_headers
@@ -31,15 +35,28 @@ static int read_request_line(int fd, struct core_object * co);
 static int read_headers(int fd, struct core_object * co);
 
 /**
- * marshal_headers
+ * marshal_header
  * <p>
- * Creates and marshals headers into the request struct.
+ * Creates and inserts a header into the request struct.
  * </p>
- * @param raw_headers string containing all headers.
+ * @param raw_header string containing a header. Example: "Content-Type: application/json".
  * @param co the core object.
  * @return 0 on success, -1 on failure.
  */
-static int marshal_headers(char * raw_headers, struct core_object * co);
+static int marshal_header(char * raw_header, struct core_object * co);
+
+/**
+ * add_header
+ * <p>
+ * Adds a header to a header array by reallocating the array and incrementing the num index.
+ * </p>
+ * @param header the header to add.
+ * @param headers the array to reallocate and add to.
+ * @param num the index number associated with the header array.
+ * @param co the core object.
+ * @return 0 on success, -1 on failure.
+ */
+static int add_header(struct http_header * header, struct http_header ** headers, size_t * num, struct core_object * co);
 
 /**
  * read_entity_body
@@ -64,10 +81,6 @@ static int read_entity_body(int fd, struct core_object * co);
 static char * read_until(int fd, char * until, struct core_object * co);
 
 int read_request(int fd, struct core_object * co) {
-    if (read_request_line(fd, co) == FAILURE) {
-        return -1;
-    }
-
     if (read_headers(fd, co) == FAILURE) {
         return -1;
     }
@@ -79,44 +92,89 @@ int read_request(int fd, struct core_object * co) {
     return 0;
 }
 
-static int read_request_line(int fd, struct core_object * co) {
-    size_t c_size = sizeof(char);
-    char last_c = ' ';
-    char current_c = ' ';
-    char * raw_request_line;
-    size_t request_line_size = c_size;
+static int read_headers(int fd, struct core_object * co) {
+    bool request_line = true;
+    char until[5] = {CR, LF, CR, LF, TERM};
+    char sep[3] = {CR, LF, TERM};
+    char * tok;
 
-    raw_request_line = mm_malloc(c_size, co->mm, __FILE__, __FUNCTION__, __LINE__);
-    if (raw_request_line == NULL) {
-        SET_ERROR(co->err);
+    char * headers = read_until(fd, until, co);
+    if (!headers) {
         return FAILURE;
     }
 
-    // TODO: call read_until() here with until = CRLF
-
-    co->so->req->request_line = init_http_request_line(raw_request_line, co);
-    if (!co->so->req->request_line) {
-        return FAILURE;
+    tok = litlittok(headers, sep);
+    while(tok != NULL) {
+        if (request_line) {
+            co->so->req->request_line = init_http_request_line(tok, co);
+            if (!co->so->req->request_line) {
+                return FAILURE;
+            }
+            request_line = false;
+        } else {
+            if (marshal_header(tok, co) == -1) {
+                return FAILURE;
+            }
+        }
+        tok = litlittok(NULL, sep);
     }
-    mm_free(raw_request_line, co);
 
     return SUCCESS;
 }
 
-static int read_headers(int fd, struct core_object * co) {
-    char last_c = ' ';
-    char current_c = ' ';
-    size_t c_size = sizeof(char);
-    size_t headers_size = c_size;
+static int marshal_header(char * raw_header, struct core_object * co) {
+    struct http_header * header = init_http_header(raw_header, co);
+    if (!header) {
+        return FAILURE;
+    }
 
-    char * raw_headers = mm_malloc(sizeof(char), co->mm, __FILE__, __FUNCTION__, __LINE__);
-    if (!raw_headers) {
+    // general headers
+    for (size_t i = 0; i < (sizeof(http_general_headers) / sizeof(http_general_headers[0])); i++) {
+        if (strcmp(header->key, http_general_headers[i]) == 0) {
+            if (add_header(header, co->so->req->general_headers, &co->so->req->num_general_headers, co) == -1) {
+                return FAILURE;
+            }
+            return SUCCESS;
+        }
+    }
+
+    // request headers
+    for (size_t i = 0; i < (sizeof(http_request_headers) / sizeof(http_request_headers[0])); i++) {
+        if (strcmp(header->key, http_request_headers[i]) == 0) {
+            if (add_header(header, co->so->req->request_headers, &co->so->req->num_request_headers, co) == -1) {
+                return FAILURE;
+            }
+            return SUCCESS;
+        }
+    }
+
+    // entity headers
+    for (size_t i = 0; i < (sizeof(http_entity_headers) / sizeof(http_entity_headers[0])); i++) {
+        if (strcmp(header->key, http_entity_headers[i]) == 0) {
+            if (add_header(header, co->so->req->entity_headers, &co->so->req->num_entity_headers, co) == -1) {
+                return FAILURE;
+            }
+            return SUCCESS;
+        }
+    }
+
+    // any unrecognized header is an extension header
+    if (add_header(header, co->so->req->extension_headers, &co->so->req->num_extension_headers, co) == -1) {
+        return FAILURE;
+    }
+    return SUCCESS;
+}
+
+static int add_header(struct http_header * header, struct http_header ** headers, size_t * num, struct core_object * co) {
+    (*num)++;
+    headers = mm_realloc((*headers), (*num) * sizeof(struct http_header *), co->mm);
+    if (!*headers) {
+        (*num)--;
         SET_ERROR(co->err);
         return FAILURE;
     }
 
-    // TODO: add read_until call here with until = CRLFCRLF
-
+    headers[(*num) - 1] = header;
     return SUCCESS;
 }
 
@@ -126,21 +184,36 @@ static int read_entity_body(int fd, struct core_object * co) {
 }
 
 static char * read_until(int fd, char * until, struct core_object * co) {
+    char c;
     size_t line_size = 2; // initial line size
-    size_t line_idx = 0; // where to write the first character
 
-    char * line = mm_malloc(line_size, co->mm, __FILE__, __FUNCTION__, __LINE__);
+    char * line = mm_malloc(line_size, co->mm);
     if (!line) {
         SET_ERROR(co->err);
         return NULL;
     }
 
     do {
-        // TODO: read character, realloc, write character, increment
+        if (read_fully(fd, &c, sizeof(char)) == -1) {
+            return NULL;
+        }
+        line = mm_realloc(line, line_size, co->mm);
+        if (!line) {
+            SET_ERROR(co->err);
+            return NULL;
+        }
+        line[line_size - 2] = c;
+        line[line_size - 1] = TERM;
+        line_size++;
     } while (!strstr(line, until));
 
-    // TODO: remove until from end of line
-    // TODO: add null terminator
+    // reallocate to remove until from line, add null terminator
+    line_size -= strlen(until);
+    line = mm_realloc(line, line_size, co->mm);
+    if (!line) {
+        SET_ERROR(co->err);
+        return NULL;
+    }
 
     return line;
 }

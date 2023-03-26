@@ -1,5 +1,6 @@
 #include <util.h>
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -34,4 +35,35 @@ int read_fully(int fd, void * data, size_t size) {
     }
 
     return 0;
+}
+
+char * litlittok(char * str, char * sep) {
+    // shameless copy of https://stackoverflow.com/questions/59770865/strtok-c-multiple-chars-as-one-delimiter
+    static char *string;
+    if (str != NULL) {
+        string = str;
+    }
+
+    if (string == NULL) {
+        return string;
+    }
+
+    char *end = strstr(string, sep);
+    if (end == NULL) {
+        char *temp = string;
+        string = NULL;
+        return temp;
+    }
+
+    char *temp = string;
+
+    *end = '\0';
+    string = end + strlen(sep);
+    return temp;
+}
+
+void to_lower(char * s) {
+    for(int i = 0; s[i]; i++){
+        s[i] = (char)tolower(s[i]);
+    }
 }

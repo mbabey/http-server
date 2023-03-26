@@ -278,7 +278,7 @@ void p_destroy_parent_state(struct core_object *co, struct state_object *so, str
     }
     
     mm_free(co->mm, parent);
-    destroy_http_request(&so->req);
+    destroy_http_request(&so->req, co);
     
     sem_close(so->c_to_p_pipe_sem_write);
     sem_close(so->domain_sems[READ]);
