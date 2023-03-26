@@ -7,7 +7,7 @@
 #include <poll.h>
 #include <netinet/in.h>
 
-#define VERSION "HTTP/1.0" /** HTTP Version 1.0 */
+#define HTTP_VERSION "HTTP/1.0" /** HTTP Version 1.0 */
 
 /**
  * HTTP 1.0 methods
@@ -45,60 +45,43 @@
 #define TERM '\0'
 #define COLON ':'
 
-/**
- * The number of worker processes to be spawned to handle network requests.
- */
-#define NUM_CHILD_PROCESSES 8
+#define NUM_CHILD_PROCESSES 8             /** The number of worker processes to be spawned to handle network requests. */
+#define CONNECTION_QUEUE 100              /** The number of connections that can be queued on the listening socket. */
+#define MAX_CONNECTIONS 5                 /** The maximum number of connections that can be accepted by the process server. */
+#define POLLFDS_SIZE 2 + MAX_CONNECTIONS  /** The size of the pollfds array. +2 for listen socket and child-to-parent pipe. */
 
-/**
-* The number of connections that can be queued on the listening socket.
-*/
-#define CONNECTION_QUEUE 100
+#define READ 0   /** Read end of child_finished_pipe or read child_finished_semaphore. */
+#define WRITE 1  /** Write end of child_finished_pipe or read child_finished_semaphore. */
 
-/**
-* The maximum number of connections that can be accepted by the process server.
-*/
-#define MAX_CONNECTIONS 5
+#define PIPE_WRITE_SEM_NAME "/pw_2f6a08"      /** Pipe write semaphore name. */
+#define DOMAIN_READ_SEM_NAME "/dr_2f6a08"     /** Domain socket read semaphore name. */
+#define DOMAIN_WRITE_SEM_NAME "/dw_2f6a08"    /** Domain socket write semaphore name. */
 
-/**
- * The size of the pollfds array. +2 for listen socket and child-to-parent pipe.
- */
-#define POLLFDS_SIZE 2 + MAX_CONNECTIONS
+#define FOR_EACH_CHILD_c_IN_CHILD_PIDS for (size_t c = 0; c < NUM_CHILD_PROCESSES; ++c) /** For each loop macro for looping over child processes. */
+#define FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS for (size_t p = 2; p < POLLFDS_SIZE; ++p)   /** For each loop macro for looping over socket pollfds. */
 
-/**
-* Read end of child_finished_pipe or read child_finished_semaphore.
-*/
-#define READ 0
-
-/**
-* Write end of child_finished_pipe or read child_finished_semaphore.
-*/
-#define WRITE 1
-
-/**
-* Pipe write semaphore name.
-*/
-#define PIPE_WRITE_SEM_NAME "/pw_2f6a08" // Random hex to prevent collision of this filename with others.
-
-/**
-* Domain socket read semaphore name.
-*/
-#define DOMAIN_READ_SEM_NAME "/dr_2f6a08"
-
-/**
-* Domain socket write semaphore name.
-*/
-#define DOMAIN_WRITE_SEM_NAME "/dw_2f6a08"
-
-/**
- * For each loop macro for looping over child processes.
- */
-#define FOR_EACH_CHILD_c_IN_CHILD_PIDS for (size_t c = 0; c < NUM_CHILD_PROCESSES; ++c)
-
-/**
- * For each loop macro for looping over socket pollfds.
- */
-#define FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS for (size_t p = 2; p < POLLFDS_SIZE; ++p)
+/** HTTP 1.0 Common Status Codes. */
+enum StatusCodes
+{
+    OK_200 = 200,
+    CREATED_201,
+    ACCEPTED_202,
+    NULL_203,
+    NO_CONTENT_204,
+    MOVED_PERMANENTLY_301 = 301,
+    MOVED_TEMPORARILY_302,
+    NULL_303,
+    NOT_MODIFIED_304,
+    BAD_REQUEST_400 = 400,
+    UNAUTHORIZED_401,
+    NULL_402,
+    FORBIDDEN_403,
+    NOT_FOUND_404,
+    INTERNAL_SERVER_ERROR_500 = 500,
+    NOT_IMPLEMENTED_501,
+    BAD_GATEWAY_502,
+    SERVICE_UNAVAILABLE_503
+};
 
 /**
  * core_object
@@ -184,6 +167,24 @@ struct http_request {
     size_t num_extension_headers;
     struct http_header ** extension_headers;
     char * entity_body;
+};
+
+/**
+ * HTTP Response status line.
+ */
+struct http_status_line {
+    const char *version;
+    const char *status_code;
+    const char *reason_phrase;
+};
+
+/**
+ * HTTP Response.
+ */
+struct http_response {
+    struct http_status_line status_line;
+    struct http_header ** headers;
+    const char *entity_body;
 };
 
 #endif //PROCESS_SERVER_OBJECTS_H

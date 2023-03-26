@@ -170,6 +170,18 @@ static int c_get_file_description_from_domain_socket(struct core_object *co, str
                                                      struct child_struct *child);
 
 /**
+ * c_handle_http_request_response
+ * <p>
+ * Handle an http request and response.
+ * </p>
+ * @param co the core obejct
+ * @param so the state object
+ * @param child the child object
+ * @return 0 on success, -1 and set err on failure
+ */
+static int c_handle_http_request_response(struct core_object *co, struct state_object *so, struct child_struct *child);
+
+/**
  * c_inform_parent_recv_finished
  * <p>
  * Send the original fd number to the parent over the child-to-parent pipe.
@@ -535,9 +547,16 @@ static int c_receive_and_handle_messages(struct core_object *co, struct state_ob
             return -1;
         }
         
-        // TODO: c_handle_http_request_response(co, so, child);
-        (void) fprintf(stdout, "HTTP request handler not implemented.\n");
-    
+        if (errno == EINTR)
+        {
+            return 0;
+        }
+        
+        if (c_handle_http_request_response(co, so, child) == -1)
+        {
+            return -1;
+        }
+        
         if (c_inform_parent_recv_finished(co, so, child) == -1)
         {
             return -1;
@@ -549,10 +568,27 @@ static int c_receive_and_handle_messages(struct core_object *co, struct state_ob
     return 0;
 }
 
+static int c_handle_http_request_response(struct core_object *co, struct state_object *so, struct child_struct *child)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    struct http_request request;
+    
+    // receive and parse http request
+    
+    // handle some action dictated by the request
+    // function here should set the status as a number
+    
+    // assemble and send http response
+    // this function takes the status and makes an appropriate response
+    
+    return 0;
+}
+
 static int c_get_file_description_from_domain_socket(struct core_object *co, struct state_object *so,
                                                      struct child_struct *child)
 {
-    PRINT_STACK_TRACE(co->tracer);
+    PRINT_STACK_TRACE(co->tracer);`\
     
     ssize_t        bytes_recv;
     struct msghdr  msghdr;

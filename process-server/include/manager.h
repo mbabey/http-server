@@ -113,4 +113,15 @@ void *mm_calloc(size_t count, size_t size, struct memory_manager *mem_manager);
  */
 void *mm_realloc(void *ptr, size_t size, struct memory_manager *mem_manager);
 
+/**
+ * mm_strdup
+ * <p>
+ * Call strdup(3) on s1 and add the result to the memory manager mm.
+ * </p>
+ * @param s1 the string on which to call strdup(3)
+ * @param mm the memory manager to which the result of strdup(3) will be added
+ * @return the result of strdup(3) on success, or NULL and set errno on failure.
+ */
+char *mm_strdup(const char *s1, struct memory_manager *mm);
+
 #endif //MEMORY_MANAGER_MANAGER_H

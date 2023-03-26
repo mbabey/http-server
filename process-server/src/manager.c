@@ -1,6 +1,7 @@
 #include "manager.h"
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * mm_free_recurse
@@ -257,4 +258,9 @@ static struct memory_address *mm_find_in_list(struct memory_manager *mem_manager
     }
     
     return ma;
+}
+
+char *mm_strdup(const char *s1, struct memory_manager *mm)
+{
+    return mm_add(mm, strdup(s1));
 }
