@@ -31,6 +31,7 @@ set(HEADER_LIST
         #=vvvv= INCLUDES FOR DUMMY MAIN =vvvv=#
         )
 
+set(COMPILE_AS_LIBRARY FALSE)
 set(SANITIZE TRUE)
 
 add_compile_definitions(_POSIX_C_SOURCE=200809L)
@@ -148,41 +149,35 @@ set(CLANG_TIDY_CHECKS "${CLANG_TIDY_CHECKS},-clang-analyzer-security.insecureAPI
 set(CLANG_TIDY_CHECKS "${CLANG_TIDY_CHECKS},-android-cloexec-accept")
 set(CMAKE_C_CLANG_TIDY clang-tidy -checks=${CLANG_TIDY_CHECKS};--quiet)
 
-#========= vvv COMPILE AS LIBRARY vvv =========#
-
-#add_library(http-server SHARED ${SOURCE_LIST} ${HEADER_LIST})
-#target_include_directories(http-server PRIVATE include/http-server)
-#target_include_directories(http-server PRIVATE /usr/local/include)
-#target_link_directories(http-server PRIVATE /usr/local/lib)
-
-#if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#    target_include_directories(http-server PRIVATE /usr/include)
-#endif ()
-
-#set_target_properties(http-server PROPERTIES
-#        VERSION ${PROJECT_VERSION}
-#        SOVERSION ${PROJECT_VERSION_MAJOR})
-
-#get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
-
-#if ("${LIB64}" STREQUAL "TRUE")
-#    set(LIBSUFFIX 64)
-#else()
-#    set(LIBSUFFIX "")
-#endif()
-
-#set(INSTALL_LIB_DIR lib${LIBSUFFIX} CACHE PATH "Installation directory for libraries")
-#mark_as_advanced(INSTALL_LIB_DIR)
-
-#install(TARGETS http-server LIBRARY DESTINATION ${INSTALL_LIB_DIR})
-#install(FILES ${HEADER_LIST} DESTINATION include/http-server)
-
-#========= ^^^ COMPILE AS LIBRARY ^^^ =========#
-#========= vvv COMPILE AS EXECUTABLE vvv =========#
-
-add_executable(http-server ${SOURCE_LIST})
+if (${COMPILE_AS_LIBRARY})
+add_library(http-server SHARED ${SOURCE_LIST} ${HEADER_LIST})
+target_include_directories(http-server PRIVATE include/http-server)
 target_include_directories(http-server PRIVATE /usr/local/include)
+target_link_directories(http-server PRIVATE /usr/local/lib)
 
-#========= ^^^ COMPILE AS EXECUTABLE ^^^ =========#
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_include_directories(http-server PRIVATE /usr/include)
+endif ()
+
+set_target_properties(http-server PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR})
+
+get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+
+if ("${LIB64}" STREQUAL "TRUE")
+    set(LIBSUFFIX 64)
+else()
+    set(LIBSUFFIX "")
+endif()
+
+set(INSTALL_LIB_DIR lib${LIBSUFFIX} CACHE PATH "Installation directory for libraries")
+mark_as_advanced(INSTALL_LIB_DIR)
+
+install(TARGETS http-server LIBRARY DESTINATION ${INSTALL_LIB_DIR})
+install(FILES ${HEADER_LIST} DESTINATION include/http-server)
+else() # Compile as executable
+add_executable(http-server ${SOURCE_LIST})
+endif()
 
 add_dependencies(http-server doxygen)
