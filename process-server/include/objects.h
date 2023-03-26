@@ -180,7 +180,7 @@ struct http_status_line {
  */
 struct http_response {
     struct http_status_line status_line;
-    struct http_header * headers;
+    struct http_header ** headers;
     const char *entity_body;
 };
 

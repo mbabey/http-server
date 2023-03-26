@@ -41,31 +41,52 @@
  * @param co the core object
  * @param response the response object
  * @param status the status code
- * @return 0 on success, -1 and set err on failure
  */
-static int assemble_status_line(struct core_object *co, struct http_response *response, size_t status);
+static void assemble_status_line(struct core_object *co, struct http_response *response, size_t status);
 
-int assemble_send_response(struct core_object *co, struct state_object *so, int socket_fd,
-                           size_t status, const char **headers, const char *entity_body)
+/**
+ * serialize_http_response
+ * <p>
+ * Serialize an HTTP Response object into a byte sequence.
+ * </p>
+ * @param co the core object
+ * @param dst_buffer the destination byte buffer
+ * @param src_response the response to be serialized
+ * @param entity_body_size the size of the entity body in the response
+ * @return 0 on success, -1 and set error on failure.
+ */
+static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer, struct http_response *src_response,
+                                   size_t entity_body_size);
+
+int assemble_send_response(struct core_object *co, struct state_object *so, int socket_fd, size_t status,
+                           struct http_header **headers, const char *entity_body, size_t entity_body_size)
 {
     PRINT_STACK_TRACE(co->tracer);
     
     struct http_response response;
+    uint8_t *serial_response;
     
     // Assemble the status line
+    assemble_status_line(co, &response, status);
     
     // Assemble the headers
+    response.headers = headers;
     
     // Assemble the body
+    response.entity_body = entity_body;
     
     // Serialize the response
+    if (serialize_http_response(co, &serial_response, &response, entity_body_size) == -1)
+    {
+        return -1;
+    }
     
     // Send the (whole) response
     
     return 0;
 }
 
-static int assemble_status_line(struct core_object *co, struct http_response *response, size_t status)
+static void assemble_status_line(struct core_object *co, struct http_response *response, size_t status)
 {
     PRINT_STACK_TRACE(co->tracer);
     
@@ -166,6 +187,12 @@ static int assemble_status_line(struct core_object *co, struct http_response *re
             break;
         }
     }
+}
+
+static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer, struct http_response *src_response,
+        size_t entity_body_size)
+{
+    PRINT_STACK_TRACE(co->tracer);
     
     return 0;
 }
