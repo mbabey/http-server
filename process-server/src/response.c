@@ -59,7 +59,8 @@ static void assemble_status_line(struct core_object *co, struct http_response *r
  * @param entity_body_size the size of the entity body in the response
  * @return 0 on success, -1 and set error on failure.
  */
-static int serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *src_response);
+static int serialize_http_response(struct core_object *co, char **dst_buffer, size_t dst_buffer_size,
+                                   struct http_response *src_response);
 
 /**
  * get_header_size_bytes
@@ -71,13 +72,15 @@ static int serialize_http_response(struct core_object *co, char **dst_buffer, st
  */
 static size_t get_header_size_bytes(struct http_header **headers, TRACER_FUNCTION_AS(tracer));
 
-int assemble_send_response(struct core_object *co, struct state_object *so, int socket_fd, size_t status,
-                           struct http_header **headers, const char *entity_body, size_t entity_body_size)
+int assemble_send_response(struct core_object *co, int socket_fd,
+                           size_t status, struct http_header **headers, const char *entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
     
     struct http_response response;
-    uint8_t              *serial_response;
+    size_t               headers_size_bytes;
+    size_t               serial_response_size;
+    char                 *serial_response;
     
     // Assemble the status line, headers, and body of the response
     assemble_status_line(co, &response, status);
@@ -85,12 +88,22 @@ int assemble_send_response(struct core_object *co, struct state_object *so, int 
     response.entity_body = entity_body;
     
     // Serialize the response
-    if (serialize_http_response(co, &serial_response, &response) == -1)
+    headers_size_bytes   = get_header_size_bytes(response.headers, co->tracer);
+    serial_response_size = STATUS_LINE_SIZE(response.status_line) + CRLF_SIZE
+                           + headers_size_bytes // Includes CRLF_SIZE
+                           + CRLF_SIZE
+                           + strlen(response.entity_body);
+    if (serialize_http_response(co, &serial_response, serial_response_size, &response) == -1)
     {
         return -1;
     }
     
-    // Send the (whole) response
+    // Send the response
+    if (send(socket_fd, serial_response, serial_response_size, 0) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
     
     return 0;
 }
@@ -198,27 +211,19 @@ static void assemble_status_line(struct core_object *co, struct http_response *r
     }
 }
 
-
-static int serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *src_response)
+static int serialize_http_response(struct core_object *co, char **dst_buffer, size_t dst_buffer_size,
+                                   struct http_response *src_response)
 {
     PRINT_STACK_TRACE(co->tracer);
     
-    size_t headers_size_bytes;
-    
-    headers_size_bytes = get_header_size_bytes(src_response->headers, co->tracer);
-    
-    *dst_buffer = mm_malloc(STATUS_LINE_SIZE(src_response->status_line) + CRLF_SIZE
-                            + headers_size_bytes // Includes CRLF_SIZE
-                            + CRLF_SIZE
-                            + strlen(src_response->entity_body),
-                            co->mm);
+    *dst_buffer = mm_malloc(dst_buffer_size, co->mm);
     if (!*dst_buffer)
     {
         SET_ERROR(co->err);
         return -1;
     }
     
-    size_t byte_offset;
+    size_t             byte_offset;
     struct http_header **headers;
     
     byte_offset = 0;
