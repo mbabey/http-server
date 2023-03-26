@@ -43,6 +43,13 @@
 #define LF '\n'
 #define SP ' '
 #define TERM '\0'
+#define CRLF_STR "\r\n"
+#define SP_STR " "
+#define COLON_SP_STR ": "
+
+#define SP_SIZE 1       /** Number of bytes for SP. */
+#define CRLF_SIZE 2     /** Number of bytes for CRLF. */
+#define COLON_SP_SIZE 2 /** Number of bytes for ": " */
 
 #define NUM_CHILD_PROCESSES 8             /** The number of worker processes to be spawned to handle network requests. */
 #define CONNECTION_QUEUE 100              /** The number of connections that can be queued on the listening socket. */

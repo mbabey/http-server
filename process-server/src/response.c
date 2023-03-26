@@ -35,10 +35,7 @@
 
 /** Number of bytes taken by a status_line struct. */
 #define STATUS_LINE_SIZE(status_line) \
-    (strlen((status_line).version) + strlen((status_line).status_code) + strlen((status_line).reason_phrase))
-
-/** Number of bytes for CRLF. */
-#define CRLF_SIZE 2
+    (strlen((status_line).version) + SP_SIZE + strlen((status_line).status_code) + SP_SIZE + strlen((status_line).reason_phrase))
 
 /**
  * assemble_status_line
@@ -72,7 +69,7 @@ static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer,
  * @param headers the list of headers
  * @return the number of bytes in the headers
  */
-static size_t get_header_size_bytes(struct core_object *co, struct http_header **headers);
+static size_t get_header_size_bytes(struct http_header **headers, TRACER_FUNCTION_AS(tracer));
 
 int assemble_send_response(struct core_object *co, struct state_object *so, int socket_fd, size_t status,
                            struct http_header **headers, const char *entity_body, size_t entity_body_size)
@@ -208,27 +205,71 @@ static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer,
     
     size_t headers_size_bytes;
     
-    headers_size_bytes = get_header_size_bytes(NULL, src_response->headers);
+    headers_size_bytes = get_header_size_bytes(src_response->headers, co->tracer);
     
     *dst_buffer = mm_malloc(STATUS_LINE_SIZE(src_response->status_line) + CRLF_SIZE
                             + headers_size_bytes // Includes CRLF_SIZE
                             + CRLF_SIZE
                             + strlen(src_response->entity_body),
                             co->mm);
+    if (!*dst_buffer)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    
+    size_t byte_offset;
+    struct http_header **headers;
+    
+    byte_offset = 0;
+    
+    // Serialize the status line.
+    // strcpy to avoid copying null byte.
+    strcpy((char *) (*dst_buffer + byte_offset), src_response->status_line.version);
+    byte_offset += sizeof(src_response->status_line.version);
+    strcpy((char *) (*dst_buffer + byte_offset), SP_STR);
+    byte_offset += SP_SIZE;
+    strcpy((char *) (*dst_buffer + byte_offset), src_response->status_line.status_code);
+    byte_offset += sizeof(src_response->status_line.status_code);
+    strcpy((char *) (*dst_buffer + byte_offset), SP_STR);
+    byte_offset += SP_SIZE;
+    strcpy((char *) (*dst_buffer + byte_offset), src_response->status_line.reason_phrase);
+    byte_offset += sizeof(src_response->status_line.reason_phrase);
+    strcpy((char *) (*dst_buffer + byte_offset), CRLF_STR);
+    byte_offset += CRLF_SIZE;
+    
+    // Serialize the headers.
+    headers = src_response->headers;
+    for (; *headers; ++headers)
+    {
+        strcpy((char *) (*dst_buffer + byte_offset), (*headers)->key);
+        byte_offset += strlen((*headers)->key);
+        strcpy((char *) (*dst_buffer + byte_offset), COLON_SP_STR);
+        byte_offset += COLON_SP_SIZE;
+        strcpy((char *) (*dst_buffer + byte_offset), (*headers)->value);
+        byte_offset += strlen((*headers)->value);
+        strcpy((char *) (*dst_buffer + byte_offset), CRLF_STR);
+        byte_offset += CRLF_SIZE;
+    }
+    
+    strcpy((char *) (*dst_buffer + byte_offset), CRLF_STR);
+    byte_offset += CRLF_SIZE;
+    
+    strcpy((char *) (*dst_buffer + byte_offset), src_response->entity_body);
     
     return 0;
 }
 
-static size_t get_header_size_bytes(struct core_object *co, struct http_header **headers)
+static size_t get_header_size_bytes(struct http_header **headers, TRACER_FUNCTION_AS(tracer))
 {
-    PRINT_STACK_TRACE(co->tracer);
+    PRINT_STACK_TRACE(tracer);
     
     size_t header_bytes_total;
     
     header_bytes_total = 0;
     for (; *headers; ++headers)
     {
-        header_bytes_total += strlen((*headers)->key) + strlen((*headers)->value) + CRLF_SIZE;
+        header_bytes_total += strlen((*headers)->key) + COLON_SP_SIZE + strlen((*headers)->value) + CRLF_SIZE;
     }
     
     return header_bytes_total;
