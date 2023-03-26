@@ -35,6 +35,14 @@
 #define H_WWW_AUTHENTICATE "WWW-Authenticate"
 
 /**
+ * HTTP 1.0 syntax
+ */
+#define CR '\r'
+#define LF '\n'
+#define SP ' '
+#define TERM '\0'
+
+/**
  * The number of worker processes to be spawned to handle network requests.
  */
 #define NUM_CHILD_PROCESSES 8
@@ -119,6 +127,7 @@ struct state_object
     sem_t                *c_to_p_pipe_sem_write;
     struct parent_struct *parent;
     struct child_struct  *child;
+    struct http_request  *req;
 };
 
 /**
@@ -142,7 +151,7 @@ struct child_struct
 };
 
 /**
- * Represents a HTTP 1.0 header
+ * Represents an HTTP 1.0 header
  */
 struct http_header {
     char * key;
@@ -150,9 +159,19 @@ struct http_header {
 };
 
 /**
- * Represents a HTTP 1.0 request
+ * Represents an HTTP 1.0 request line
+ */
+struct http_request_line {
+    char * method;
+    char * request_URI;
+    char * http_version;
+};
+
+/**
+ * Represents an HTTP 1.0 request
  */
 struct http_request {
+    struct http_request_line * request_line;
     size_t num_general_headers;
     struct http_header * general_headers;
     size_t num_request_headers;
