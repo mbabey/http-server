@@ -1,6 +1,7 @@
 #ifndef POLL_SERVER_UTIL_H
 #define POLL_SERVER_UTIL_H
 
+#include <objects.h>
 #include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -48,5 +49,27 @@ char * litlittok(char * str, char * sep);
  * @param s the string to transform.
  */
 void to_lower(char * s);
+
+/**
+ * get_header
+ * <p>
+ * Attempts to get the value of a header from a header array using its field name.
+ * </p>
+ * @param key the headers field name.
+ * @param headers array of headers to search.
+ * @param num_headers the number of headers in the header array.
+ * @return the header pointer if found, NULL if not.
+ */
+struct http_header * get_header(const char * key, struct http_header ** headers, const size_t * num_headers);
+
+/**
+ * strtosize_t
+ * <p>
+ * Parses and returns a size_t value from a string.
+ * </p>
+ * @param str the string to parse.
+ * @return the value if success, 0 if failure.
+ */
+size_t strtosize_t(char * str);
 
 #endif //POLL_SERVER_UTIL_H

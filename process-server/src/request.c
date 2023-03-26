@@ -76,20 +76,10 @@ struct http_header * init_http_header(char * header_line, struct core_object * c
         SET_ERROR(co->err);
         return NULL;
     }
-    header->key = mm_malloc(strlen(toks[H_KEY]) + 1, co->mm);
-    if (!header->key) {
-        SET_ERROR(co->err);
-        return NULL;
-    }
-    header->value = mm_malloc(strlen(toks[H_VALUE]) + 1, co->mm);
-    if (!header->value) {
-        SET_ERROR(co->err);
-        return NULL;
-    }
 
     to_lower(toks[H_KEY]); // field names are case-insensitive (RFC section 4.2)
-    strcpy(header->key, toks[H_KEY]);
-    strcpy(header->value, toks[H_VALUE]);
+    header->key = mm_strdup(toks[H_KEY], co->mm);
+    header->value = mm_strdup(toks[H_VALUE], co->mm);
 
     return header;
 }
@@ -109,12 +99,6 @@ struct http_request_line * init_http_request_line(char * raw_request_line, struc
     char sep[2] = {SP, TERM};
     char * toks[RL_TOKS];
 
-    struct http_request_line * request_line = mm_malloc(sizeof(struct http_request_line), co->mm);
-    if (!request_line) {
-        SET_ERROR(co->err);
-        return NULL;
-    }
-
     tok = litlittok(raw_request_line, sep);
     int i = 0;
     while(tok != NULL) {
@@ -129,9 +113,16 @@ struct http_request_line * init_http_request_line(char * raw_request_line, struc
         return NULL;
     }
 
-    request_line->method = toks[RL_METHOD];
-    request_line->request_URI = toks[RL_REQUEST_URI];
-    request_line->http_version = toks[RL_HTTP_VERSION];
+    struct http_request_line * request_line = mm_malloc(sizeof(struct http_request_line), co->mm);
+    if (!request_line) {
+        SET_ERROR(co->err);
+        return NULL;
+    }
+
+    request_line->method = mm_strdup(toks[RL_METHOD], co->mm);
+    request_line->request_URI = mm_strdup(toks[RL_REQUEST_URI], co->mm);
+    request_line->http_version = mm_strdup(toks[RL_HTTP_VERSION], co->mm);
+
     return request_line;
 }
 

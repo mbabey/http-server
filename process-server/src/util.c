@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
+
+#define BASE_10 10
 
 int write_fully(int fd, void * data, size_t size) {
     ssize_t result;
@@ -66,4 +69,23 @@ void to_lower(char * s) {
     for(int i = 0; s[i]; i++){
         s[i] = (char)tolower(s[i]);
     }
+}
+
+struct http_header * get_header(const char * key, struct http_header ** headers, const size_t * num_headers) {
+    for (size_t i = 0; i < *num_headers; i++) {
+        if(strcmp(key, headers[i]->key) == 0) {
+            return headers[i];
+        }
+    }
+    return NULL;
+}
+
+size_t strtosize_t(char * str) {
+    size_t val;
+    val = strtoul(str, NULL, BASE_10);
+    if (val == 0) {
+        perror("strtoul parsing string");
+        return 0;
+    }
+    return val;
 }

@@ -113,7 +113,6 @@ struct state_object
     sem_t                *c_to_p_pipe_sem_write;
     struct parent_struct *parent;
     struct child_struct  *child;
-    struct http_request  *req;
 };
 
 /**

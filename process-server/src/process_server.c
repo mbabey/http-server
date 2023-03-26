@@ -5,7 +5,6 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
-#include <mem_manager/manager.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <signal.h>
@@ -573,8 +572,19 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     PRINT_STACK_TRACE(co->tracer);
     
     struct http_request request;
-    
+
+    // TODO: should not exit on read failure, instead write status back, do this once handle and response are finished
+
     // receive and parse http request
+    if (read_request(child->client_fd_local, &request, co) == -1) {
+        (void) fprintf(stderr, "Failed to read request\n");
+        return -1;
+    } else {
+        printf("Read request successfully\n");
+        printf("METHOD: %s\n", request.request_line->method);
+        printf("REQUEST URI: %s\n", request.request_line->request_URI);
+        printf("HTTP VERSION: %s\n", request.request_line->http_version);
+    }
     
     // handle some action dictated by the request
     // function here should set the status as a number
@@ -588,7 +598,7 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
 static int c_get_file_description_from_domain_socket(struct core_object *co, struct state_object *so,
                                                      struct child_struct *child)
 {
-    PRINT_STACK_TRACE(co->tracer);`\
+    PRINT_STACK_TRACE(co->tracer);
     
     ssize_t        bytes_recv;
     struct msghdr  msghdr;
