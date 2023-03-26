@@ -15,6 +15,7 @@ set(SOURCE_LIST
         ${SOURCE_DIR}/process_server.c
         ${SOURCE_DIR}/process_server_util.c
         ${SOURCE_DIR}/main.c
+        ${SOURCE_DIR}/manager.c
         #=vvvv= SOURCE FOR DUMMY MAIN =vvvv=#
         )
 set(HEADER_LIST
@@ -24,6 +25,7 @@ set(HEADER_LIST
         ${INCLUDE_DIR}/process_server.h
         ${INCLUDE_DIR}/process_server_util.h
         ${INCLUDE_DIR}/server_state.h
+        ${INCLUDE_DIR}/manager.h
         #=vvvv= INCLUDES FOR DUMMY MAIN =vvvv=#
         )
 
@@ -182,7 +184,3 @@ target_include_directories(http-server PRIVATE /usr/local/include)
 #========= ^^^ COMPILE AS EXECUTABLE ^^^ =========#
 
 add_dependencies(http-server doxygen)
-
-find_library(MEM_MANAGER mem_manager REQUIRED)
-
-target_link_libraries(http-server PUBLIC ${MEM_MANAGER})
