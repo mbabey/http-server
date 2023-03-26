@@ -7,60 +7,52 @@
 #include <poll.h>
 #include <netinet/in.h>
 
-/**
- * The number of worker processes to be spawned to handle network requests.
- */
-#define NUM_CHILD_PROCESSES 8
+#define NUM_CHILD_PROCESSES 8             /** The number of worker processes to be spawned to handle network requests. */
+#define CONNECTION_QUEUE 100              /** The number of connections that can be queued on the listening socket. */
+#define MAX_CONNECTIONS 5                 /** The maximum number of connections that can be accepted by the process server. */
+#define POLLFDS_SIZE 2 + MAX_CONNECTIONS  /** The size of the pollfds array. +2 for listen socket and child-to-parent pipe. */
 
-/**
-* The number of connections that can be queued on the listening socket.
-*/
-#define CONNECTION_QUEUE 100
+#define READ 0   /** Read end of child_finished_pipe or read child_finished_semaphore. */
+#define WRITE 1  /** Write end of child_finished_pipe or read child_finished_semaphore. */
 
-/**
-* The maximum number of connections that can be accepted by the process server.
-*/
-#define MAX_CONNECTIONS 5
+#define PIPE_WRITE_SEM_NAME "/pw_2f6a08"      /** Pipe write semaphore name. */
+#define DOMAIN_READ_SEM_NAME "/dr_2f6a08"     /** Domain socket read semaphore name. */
+#define DOMAIN_WRITE_SEM_NAME "/dw_2f6a08"    /** Domain socket write semaphore name. */
 
-/**
- * The size of the pollfds array. +2 for listen socket and child-to-parent pipe.
- */
-#define POLLFDS_SIZE 2 + MAX_CONNECTIONS
+#define FOR_EACH_CHILD_c_IN_CHILD_PIDS for (size_t c = 0; c < NUM_CHILD_PROCESSES; ++c) /** For each loop macro for looping over child processes. */
+#define FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS for (size_t p = 2; p < POLLFDS_SIZE; ++p)   /** For each loop macro for looping over socket pollfds. */
 
-/**
-* Read end of child_finished_pipe or read child_finished_semaphore.
-*/
-#define READ 0
-
-/**
-* Write end of child_finished_pipe or read child_finished_semaphore.
-*/
-#define WRITE 1
-
-/**
-* Pipe write semaphore name.
-*/
-#define PIPE_WRITE_SEM_NAME "/pw_2f6a08" // Random hex to prevent collision of this filename with others.
-
-/**
-* Domain socket read semaphore name.
-*/
-#define DOMAIN_READ_SEM_NAME "/dr_2f6a08"
-
-/**
-* Domain socket write semaphore name.
-*/
-#define DOMAIN_WRITE_SEM_NAME "/dw_2f6a08"
-
-/**
- * For each loop macro for looping over child processes.
- */
-#define FOR_EACH_CHILD_c_IN_CHILD_PIDS for (size_t c = 0; c < NUM_CHILD_PROCESSES; ++c)
-
-/**
- * For each loop macro for looping over socket pollfds.
- */
-#define FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS for (size_t p = 2; p < POLLFDS_SIZE; ++p)
+/** HTTP 1.0 Status Codes and Reason Phrases */
+#define STATUS_CODE_OK                      "200"
+#define REASON_PHRASE_OK                    "OK"
+#define STATUS_CODE_CREATED                 "201"
+#define REASON_PHRASE_CREATED               "Created"
+#define STATUS_CODE_ACCEPTED                "202"
+#define REASON_PHRASE_ACCEPTED              "Accepted"
+#define STATUS_CODE_NO_CONTENT              "204"
+#define REASON_PHRASE_NO_CONTENT            "No Content"
+#define STATUS_CODE_MOVED_PERMANENTLY       "301"
+#define REASON_PHRASE_MOVED_PERMANENTLY     "Moved Permanently"
+#define STATUS_CODE_MOVED_TEMPORARILY       "302"
+#define REASON_PHRASE_MOVED_TEMPORARILY     "Moved Temporarily"
+#define STATUS_CODE_NOT_MODIFIED            "304"
+#define REASON_PHRASE_NOT_MODIFIED          "Not Modified"
+#define STATUS_CODE_BAD_REQUEST             "400"
+#define REASON_PHRASE_BAD_REQUEST           "Bad Request"
+#define STATUS_CODE_UNAUTHORIZED            "401"
+#define REASON_PHRASE_UNAUTHORIZED          "Unauthorized"
+#define STATUS_CODE_FORBIDDEN               "403"
+#define REASON_PHRASE_FORBIDDEN             "Forbidden"
+#define STATUS_CODE_NOT_FOUND               "404"
+#define REASON_PHRASE_NOT_FOUND             "Not Found"
+#define STATUS_CODE_INTERNAL_SERVER_ERROR   "500"
+#define REASON_PHRASE_INTERNAL_SERVER_ERROR "Internal Server Error"
+#define STATUS_CODE_NOT_IMPLEMENTED         "501"
+#define REASON_PHRASE_NOT_IMPLEMENTED       "Not Implemented"
+#define STATUS_CODE_BAD_GATEWAY             "502"
+#define REASON_PHRASE_BAD_GATEWAY           "Bad Gateway"
+#define STATUS_CODE_SERVICE_UNAVAILABLE     "503"
+#define REASON_PHRASE_SERVICE_UNAVAILABLE   "Service Unavailable"
 
 /**
  * core_object
