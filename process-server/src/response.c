@@ -228,8 +228,8 @@ static int serialize_http_response(struct core_object *co, char **dst_buffer, si
     
     byte_offset = 0;
     
-    // Serialize the status line.
-    // strcpy to avoid copying null byte.
+    // Serialize the status line. strcpy to avoid copying null byte.
+    // Format: HTTP-Version SP Status-Code SP Reason-Phrase CRLF
     strcpy((*dst_buffer + byte_offset), src_response->status_line.version);
     byte_offset += sizeof(src_response->status_line.version);
     strcpy((*dst_buffer + byte_offset), SP_STR);
@@ -244,6 +244,7 @@ static int serialize_http_response(struct core_object *co, char **dst_buffer, si
     byte_offset += CRLF_SIZE;
     
     // Serialize the headers.
+    // Format: field-name ":" [ field-value ] CRLF
     headers = src_response->headers;
     for (; *headers; ++headers)
     {
