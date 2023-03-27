@@ -5,17 +5,64 @@
 
 #include <unistd.h>
 
-#define CONTENT_LENGTH_MAX_DIGITS 32
+#define CONTENT_LENGTH_MAX_DIGITS 32 /** The maximum number of digits acceptable for the content size. */
 
+/**
+ * http_post
+ * <p>
+ * Handle an HTTP POST Request and generate the information necessary to assemble a Response.
+ * </p>
+ * @param co the core object
+ * @param so the state object
+ * @param request the request
+ * @param status pointer to the status field for the response
+ * @param headers pointer to the header list for the response
+ * @param entity_body pointer to the entity body for the response
+ * @return 0 on success, -1 and set err on failure
+ */
 static int http_post(struct core_object *co, struct state_object *so, struct http_request *request,
                      size_t *status, struct http_header ***headers, char **entity_body);
 
+/**
+ * http_head
+ * <p>
+ * Handle an HTTP HEAD Request and generate the information necessary to assemble a Response.
+ * </p>
+ * @param co the core object
+ * @param so the state object
+ * @param request the request
+ * @param status pointer to the status field for the response
+ * @param headers pointer to the header list for the response
+ * @return 0 on success, -1 and set err on failure
+ */
 static int http_head(struct core_object *co, struct state_object *so, struct http_request *request, size_t *status,
                      struct http_header ***headers);
 
+/**
+ * http_get
+ * <p>
+ * Handle an HTTP GET Request and generate the information necessary to assemble a Response.
+ * </p>
+ * @param co the core object
+ * @param so the state object
+ * @param request the request
+ * @param status pointer to the status field for the response
+ * @param headers pointer to the header list for the response
+ * @param entity_body pointer to the entity body for the response
+ * @return 0 on success, -1 and set err on failure
+ */
 static int http_get(struct core_object *co, struct state_object *so, struct http_request *request,
                     size_t *status, struct http_header ***headers, char **entity_body);
 
+/**
+ * store_in_fs
+ * <p>
+ * Store the entity body of a request in the file system at its request line.
+ * </p>
+ * @param co the core object
+ * @param request the request
+ * @return 0 on success, -1 and set err on failure
+ */
 static int store_in_fs(struct core_object *co, const struct http_request *request);
 
 static int post_insert_assemble_response_innards(struct core_object *co, struct http_request *request,
