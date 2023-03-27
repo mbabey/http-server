@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#define WR_DIR_FLAGS (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
+
 /**
  * write_fully
  * <p>

@@ -6,8 +6,6 @@
 
 #define VERSION_START_INDEX 2
 
-#define WR_DIR_FLAGS (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
-
 /**
  * version_file
  * <p>
