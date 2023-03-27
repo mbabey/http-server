@@ -5,6 +5,8 @@
 
 #include <unistd.h>
 
+#define CONTENT_LENGTH_MAX_DIGITS 32
+
 static int http_post(struct core_object *co, struct state_object *so, struct http_request *request,
                      size_t *status, struct http_header ***headers, char **entity_body);
 
@@ -126,9 +128,10 @@ static int post_insert_assemble_response_innards(struct core_object *co, struct 
     PRINT_STACK_TRACE(co->tracer);
     
     const int num_headers = 2;
-    
     struct http_header *content_type;
     struct http_header *content_length;
+    char entity_body_size[CONTENT_LENGTH_MAX_DIGITS];
+    size_t offset;
     
     *status      = OK_200;
     *entity_body = request->entity_body;
@@ -142,6 +145,16 @@ static int post_insert_assemble_response_innards(struct core_object *co, struct 
         return -1;
     }
     
+    memset(entity_body_size, 0, CONTENT_LENGTH_MAX_DIGITS);
+    sprintf(entity_body_size, "%lu", strlen(*entity_body));
+    
+    content_type = set_header(co, "content-type", "text/html");
+    content_length = set_header(co, "content-length", entity_body_size);
+    
+    offset = 0;
+    *(*headers + offset++) = content_type;
+    *(*headers + offset++) = content_length;
+    *(*headers + offset) = NULL;
     
     return 0;
 }
