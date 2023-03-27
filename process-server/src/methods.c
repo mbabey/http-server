@@ -21,10 +21,10 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     if (strcmp(method, "GET") == 0)
     {
-        *entity_body = NULL;
         http_get(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, "HEAD") == 0)
     {
+        *entity_body = NULL;
         http_head(co, so, request, status, headers);
     } else if (strcmp(method, "POST") == 0)
     {
@@ -35,8 +35,6 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
         *headers = NULL;
         *entity_body = NULL;
     }
-    
-    // fill out status, headers, and entity body
     
     return 0;
 }
