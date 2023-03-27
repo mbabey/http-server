@@ -102,7 +102,7 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
         }
     } else
     {
-        if (store_in_fs(co, request) == -1)
+        if (store_in_fs(co, request) == -1) // TODO: should indicate whether overwrite occurred
         {
             return -1;
         }
