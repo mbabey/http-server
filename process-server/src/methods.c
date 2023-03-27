@@ -1,4 +1,6 @@
-#include "methods.h"
+#include "../include/methods.h"
+#include "../include/util.h"
+#include "../include/db.h"
 
 static int http_post(struct core_object *co, struct state_object *so, struct http_request *request,
                      size_t *status, struct http_header ***headers, char **entity_body);
@@ -59,6 +61,27 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
                      size_t *status, struct http_header ***headers, char **entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
+    
+    struct http_header *database_header;
+    
+    // Read headers to determine if database or file system
+    // TODO: which one of these is it in?
+    database_header = get_header("database", request->request_headers, request->num_request_headers);
+    database_header = get_header("database", request->entity_headers, request->num_entity_headers);
+    database_header = get_header("database", request->general_headers, request->num_general_headers);
+    database_header = get_header("database", request->extension_headers, request->num_extension_headers);
+    
+    // Store with key as URI
+    to_lower(database_header->value);
+    if (strcmp(database_header->value, "true") == 0)
+    {
+        db_upsert(co, so, request->request_line->request_URI, strlen(request->request_line->request_URI),
+                  request->entity_body, strlen(request->entity_body));
+    } else
+    {
+        
+        write_to_dir();
+    }
     
     return 0;
 }
