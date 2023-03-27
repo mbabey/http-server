@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "../include/methods.h"
 #include "../include/util.h"
 #include "../include/db.h"
@@ -79,8 +80,19 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
                   request->entity_body, strlen(request->entity_body));
     } else
     {
+        char pathname[BUFSIZ];
         
-        write_to_dir();
+        memset(pathname, 0, BUFSIZ);
+        if (getcwd(pathname, BUFSIZ) == NULL)
+        {
+            SET_ERROR(co->err);
+            return -1;
+        }
+        
+        strlcat(pathname, WRITE_DIR, BUFSIZ);
+        
+        write_to_dir(pathname, request->request_line->request_URI,
+                     request->entity_body, strlen(request->entity_body));
     }
     
     return 0;
