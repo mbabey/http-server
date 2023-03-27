@@ -20,7 +20,7 @@ set(SOURCE_LIST
         ${SOURCE_DIR}/util.c
         ${SOURCE_DIR}/main.c
         ${SOURCE_DIR}/response.c
-        ${SOURCE_DIR}/util.c
+        ${SOURCE_DIR}/db.c
         #=vvvv= SOURCE FOR DUMMY MAIN =vvvv=#
         )
 set(HEADER_LIST
@@ -35,7 +35,7 @@ set(HEADER_LIST
         ${INCLUDE_DIR}/request.h
         ${INCLUDE_DIR}/util.h
         ${INCLUDE_DIR}/response.h
-        ${INCLUDE_DIR}/util.h
+        ${INCLUDE_DIR}/db.h
         #=vvvv= INCLUDES FOR DUMMY MAIN =vvvv=#
         )
 
