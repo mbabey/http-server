@@ -35,16 +35,6 @@ void destroy_http_request(struct http_request ** req, struct core_object * co);
 struct http_header * init_http_header(char * header_line, struct core_object * co);
 
 /**
- * destroy_http_header
- * <p>
- * Frees any dynamically allocated memory from an http_header and frees the http_header struct.
- * </p>
- * @param header a pointer to a http_header struct.
- * @param co the core object.
- */
-void destroy_http_header(struct http_header * header, struct core_object * co);
-
-/**
  * init_http_request_line
  * <p>
  * Allocates memory for an http_request_line struct and marshals data into it from the raw request line.

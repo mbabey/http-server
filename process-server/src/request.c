@@ -85,16 +85,6 @@ struct http_header * init_http_header(char * header_line, struct core_object * c
     return header;
 }
 
-void destroy_http_header(struct http_header * header, struct core_object * co) {
-    if (header->key) {
-        mm_free(co->mm, header->key);
-    }
-    if (header->value) {
-        mm_free(co->mm, header->value);
-    }
-    mm_free(co->mm, header);
-}
-
 struct http_request_line * init_http_request_line(char * raw_request_line, struct core_object * co) {
     char * tok;
     char sep[2] = {SP, TERM};

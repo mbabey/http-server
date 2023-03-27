@@ -99,15 +99,14 @@ struct http_header * get_header(const char * key, struct http_header ** headers,
 struct http_header *set_header(struct core_object *co, const char *key, const char *value);
 
 /**
- * free_header
+ * destroy_http_header
  * <p>
- * Free the key and value in a header and free the header struct itself. Frees memory within the co->mm.
+ * Frees any dynamically allocated memory from an http_header and frees the http_header struct.
  * </p>
- * @param co the core object
- * @param header the header to free
- * @return 0 on success, -1 and set err on failure
+ * @param header a pointer to a http_header struct.
+ * @param co the core object.
  */
-int free_header(struct core_object *co, struct http_header *header);
+void destroy_http_header(struct http_header * header, struct core_object * co);
 
 /**
  * strtosize_t

@@ -163,26 +163,14 @@ struct http_header *set_header(struct core_object *co, const char *key, const ch
     return header;
 }
 
-int free_header(struct core_object *co, struct http_header *header)
-{
-    PRINT_STACK_TRACE(co->tracer);
-    
-    if (mm_free(co->mm, header->key) == -1)
-    {
-        SET_ERROR(co->err);
-        return -1;
+void destroy_http_header(struct http_header * header, struct core_object * co) {
+    if (header->key) {
+        mm_free(co->mm, header->key);
     }
-    if (mm_free(co->mm, header->value) == -1)
-    {
-        SET_ERROR(co->err);
-        return -1;
+    if (header->value) {
+        mm_free(co->mm, header->value);
     }
-    if (mm_free(co->mm, header) == -1)
-    {
-        SET_ERROR(co->err);
-        return -1;
-    }
-    return 0;
+    mm_free(co->mm, header);
 }
 
 size_t strtosize_t(char * str) {
