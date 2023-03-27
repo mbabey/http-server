@@ -17,6 +17,7 @@ set(SOURCE_LIST
         ${SOURCE_DIR}/main.c
         ${SOURCE_DIR}/manager.c
         ${SOURCE_DIR}/response.c
+        ${SOURCE_DIR}/util.c
         #=vvvv= SOURCE FOR DUMMY MAIN =vvvv=#
         )
 set(HEADER_LIST
@@ -28,6 +29,7 @@ set(HEADER_LIST
         ${INCLUDE_DIR}/server_state.h
         ${INCLUDE_DIR}/manager.h
         ${INCLUDE_DIR}/response.h
+        ${INCLUDE_DIR}/util.h
         #=vvvv= INCLUDES FOR DUMMY MAIN =vvvv=#
         )
 
