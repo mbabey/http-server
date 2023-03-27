@@ -7,6 +7,7 @@
 #include <sys/fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "manager.h"
 
 #define BASE_10 10
 
@@ -136,6 +137,52 @@ struct http_header * get_header(const char * key, struct http_header ** headers,
         }
     }
     return NULL;
+}
+
+struct http_header *set_header(struct core_object *co, const char *key, const char *value)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    struct http_header *header;
+    
+    header = mm_malloc(sizeof(struct http_header), co->mm);
+    if (!header)
+    {
+        SET_ERROR(co->err);
+        return NULL;
+    }
+    
+    header->key = mm_strdup(key, co->mm);
+    header->value = mm_strdup(value, co->mm);
+    if (!header->key || !header->value)
+    {
+        SET_ERROR(co->err);
+        return NULL;
+    }
+    
+    return header;
+}
+
+int free_header(struct core_object *co, struct http_header *header)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    if (mm_free(co->mm, header->key) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    if (mm_free(co->mm, header->value) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    if (mm_free(co->mm, header) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    return 0;
 }
 
 size_t strtosize_t(char * str) {

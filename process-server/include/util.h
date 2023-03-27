@@ -87,6 +87,29 @@ void to_lower(char * s);
 struct http_header * get_header(const char * key, struct http_header ** headers, size_t num_headers);
 
 /**
+ * set_header
+ * <p>
+ * Allocate memory for and set the values in an http_header struct. Allocates memory within the co->mm.
+ * </p>
+ * @param co the core object
+ * @param key the key of the header
+ * @param value the value of the header
+ * @return the header, or NULL and set err on failure.
+ */
+struct http_header *set_header(struct core_object *co, const char *key, const char *value);
+
+/**
+ * free_header
+ * <p>
+ * Free the key and value in a header and free the header struct itself. Frees memory within the co->mm.
+ * </p>
+ * @param co the core object
+ * @param header the header to free
+ * @return 0 on success, -1 and set err on failure
+ */
+int free_header(struct core_object *co, struct http_header *header);
+
+/**
  * strtosize_t
  * <p>
  * Parses and returns a size_t value from a string.

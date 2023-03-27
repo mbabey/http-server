@@ -1,7 +1,9 @@
-#include <unistd.h>
+#include "../include/db.h"
+#include "../include/manager.h"
 #include "../include/methods.h"
 #include "../include/util.h"
-#include "../include/db.h"
+
+#include <unistd.h>
 
 static int http_post(struct core_object *co, struct state_object *so, struct http_request *request,
                      size_t *status, struct http_header ***headers, char **entity_body);
@@ -13,6 +15,9 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
                     size_t *status, struct http_header ***headers, char **entity_body);
 
 static int store_in_fs(struct core_object *co, const struct http_request *request);
+
+static int post_insert_assemble_response_innards(struct core_object *co, struct http_request *request, size_t *status,
+                                                 struct http_header ***headers, char **entity_body);
 
 int perform_method(struct core_object *co, struct state_object *so, struct http_request *request,
                    size_t *status, struct http_header ***headers, char **entity_body)
@@ -88,6 +93,10 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
         {
             case 0: // insert no overwrite
             {
+                if (post_insert_assemble_response_innards(co, request, status, headers, entity_body) == -1)
+                {
+                    return -1;
+                }
                 break;
             }
             case 1: // insert overwrite
