@@ -18,8 +18,11 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
 
 static int store_in_fs(struct core_object *co, const struct http_request *request);
 
-static int post_insert_assemble_response_innards(struct core_object *co, struct http_request *request, size_t *status,
-                                                 struct http_header ***headers, char **entity_body);
+static int post_insert_assemble_response_innards(struct core_object *co, struct http_request *request,
+                                                 size_t *status, struct http_header ***headers, char **entity_body);
+
+static int post_overwrite_assemble_response_innards(struct core_object *co, struct http_request *request,
+                                                    size_t *status, struct http_header ***headers, char **entity_body);
 
 int perform_method(struct core_object *co, struct state_object *so, struct http_request *request,
                    size_t *status, struct http_header ***headers, char **entity_body)
@@ -103,6 +106,10 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
             }
             case 1: // insert overwrite
             {
+                if (post_overwrite_assemble_response_innards(co, request, status, headers, entity_body) == -1)
+                {
+                    return -1;
+                }
                 break;
             }
             case -1: // error
@@ -122,16 +129,53 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     return 0;
 }
 
-static int post_insert_assemble_response_innards(struct core_object *co, struct http_request *request, size_t *status,
-                                                 struct http_header ***headers, char **entity_body)
+static int post_insert_assemble_response_innards(struct core_object *co, struct http_request *request,
+                                                 size_t *status, struct http_header ***headers, char **entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
     
-    const int num_headers = 2;
+    const int          num_headers = 2;
     struct http_header *content_type;
     struct http_header *content_length;
-    char entity_body_size[CONTENT_LENGTH_MAX_DIGITS];
-    size_t offset;
+    char               entity_body_size[CONTENT_LENGTH_MAX_DIGITS];
+    size_t             offset;
+    
+    *status      = CREATED_201;
+    *entity_body = request->entity_body;
+    
+    content_type   = mm_malloc(sizeof(struct http_header), co->mm);
+    content_length = mm_malloc(sizeof(struct http_header), co->mm);
+    *headers = mm_malloc((num_headers + 1) * sizeof(struct http_header *), co->mm);
+    if (!(content_type && content_length && *headers))
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    
+    memset(entity_body_size, 0, CONTENT_LENGTH_MAX_DIGITS);
+    sprintf(entity_body_size, "%lu", strlen(*entity_body));
+    
+    content_type   = set_header(co, "content-type", "text/html");
+    content_length = set_header(co, "content-length", entity_body_size);
+    
+    offset = 0;
+    *(*headers + offset++) = content_type;
+    *(*headers + offset++) = content_length;
+    *(*headers + offset)   = NULL;
+    
+    return 0;
+}
+
+static int post_overwrite_assemble_response_innards(struct core_object *co, struct http_request *request,
+                                                    size_t *status, struct http_header ***headers, char **entity_body)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    const int          num_headers = 2;
+    struct http_header *content_type;
+    struct http_header *content_length;
+    char               entity_body_size[CONTENT_LENGTH_MAX_DIGITS];
+    size_t             offset;
     
     *status      = OK_200;
     *entity_body = request->entity_body;
@@ -148,13 +192,13 @@ static int post_insert_assemble_response_innards(struct core_object *co, struct 
     memset(entity_body_size, 0, CONTENT_LENGTH_MAX_DIGITS);
     sprintf(entity_body_size, "%lu", strlen(*entity_body));
     
-    content_type = set_header(co, "content-type", "text/html");
+    content_type   = set_header(co, "content-type", "text/html");
     content_length = set_header(co, "content-length", entity_body_size);
     
     offset = 0;
     *(*headers + offset++) = content_type;
     *(*headers + offset++) = content_length;
-    *(*headers + offset) = NULL;
+    *(*headers + offset)   = NULL;
     
     return 0;
 }
