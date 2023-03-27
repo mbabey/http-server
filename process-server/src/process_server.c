@@ -1,6 +1,7 @@
 #include "../include/objects.h"
 #include "../include/process_server.h"
 #include "../include/process_server_util.h"
+#include "../include/methods.h"
 #include <read.h>
 #include <request.h>
 #include <util.h>
@@ -589,10 +590,13 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     // function here should set variable status as a value of enum StatusCodes
     // function here should create a list of headers in **headers
     // function here should create or an entity body or assign NULL to *entity_body
+    if (perform_method(co, so, &request, &status, &headers, &entity_body) == -1)
+    {
+        // if there is an error, should just set status to 500
+    }
     
     // assemble and send http response
     // this function takes the status and makes an appropriate response
-
     if (assemble_send_response(co, child->client_fd_local, status, headers, entity_body) == -1)
     {
         return -1;
