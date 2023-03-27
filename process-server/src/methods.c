@@ -65,9 +65,34 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
  */
 static int store_in_fs(struct core_object *co, const struct http_request *request);
 
+/**
+ * post_insert_assemble_response_innards
+ * <p>
+ * Assemble the innards of the Response to a POST Request if an entity was inserted into the database with no
+ * overwriting.
+ * </p>
+ * @param co the core object
+ * @param so the state object
+ * @param status pointer to the status field for the response
+ * @param headers pointer to the header list for the response
+ * @param entity_body pointer to the entity body for the response
+ * @return 0 on success, -1 on failure
+ */
 static int post_insert_assemble_response_innards(struct core_object *co, struct http_request *request,
                                                  size_t *status, struct http_header ***headers, char **entity_body);
 
+/**
+ * post_overwrite_assemble_response_innards
+ * <p>
+ * Assemble the innards of the Response to a POST Request if an entity was inserted into the database with overwriting.
+ * </p>
+ * @param co the core object
+ * @param so the state object
+ * @param status pointer to the status field for the response
+ * @param headers pointer to the header list for the response
+ * @param entity_body pointer to the entity body for the response
+ * @return 0 on success, -1 on failure
+ */
 static int post_overwrite_assemble_response_innards(struct core_object *co, struct http_request *request,
                                                     size_t *status, struct http_header ***headers, char **entity_body);
 
