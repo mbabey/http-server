@@ -42,6 +42,28 @@ int read_fully(int fd, void * data, size_t size);
 char * litlittok(char * str, char * sep);
 
 /**
+ * h_litlittok
+ * <p>
+ * Combination of strtok and strstr, tokenize with a multi character separator. HEADER VERSION.
+ * </p>
+ * @param str the string to tokenize.
+ * @param sep the separator to use.
+ * @return the token when found, NULL when not.
+ */
+char * h_litlittok(char * str, char * sep);
+
+/**
+ * rl_litlittok
+ * <p>
+ * Combination of strtok and strstr, tokenize with a multi character separator. READLINE VERSION.
+ * </p>
+ * @param str the string to tokenize.
+ * @param sep the separator to use.
+ * @return the token when found, NULL when not.
+ */
+char * rl_litlittok(char * str, char * sep);
+
+/**
  * to_lower
  * <p>
  * Transforms a string to lowercase.
@@ -60,7 +82,7 @@ void to_lower(char * s);
  * @param num_headers the number of headers in the header array.
  * @return the header pointer if found, NULL if not.
  */
-struct http_header * get_header(const char * key, struct http_header ** headers, const size_t * num_headers);
+struct http_header * get_header(const char * key, struct http_header ** headers, size_t num_headers);
 
 /**
  * strtosize_t
@@ -71,5 +93,15 @@ struct http_header * get_header(const char * key, struct http_header ** headers,
  * @return the value if success, 0 if failure.
  */
 size_t strtosize_t(char * str);
+
+/**
+ * trim_whitespace
+ * <p>
+ * Trims any leading or trailing whitespace from a string.
+ * </p>
+ * @param str the string to trim.
+ * @return the trimmed string.
+ */
+char * trim_whitespace(char * str);
 
 #endif //POLL_SERVER_UTIL_H

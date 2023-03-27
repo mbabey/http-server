@@ -54,12 +54,12 @@ static int marshal_header(char * raw_header, struct http_request * req, struct c
  * Adds a header to a header array by reallocating the array and incrementing the num index.
  * </p>
  * @param header the header to add.
- * @param headers the array to reallocate and add to.
+ * @param headers a pointer to the array to reallocate and add to.
  * @param num the index number associated with the header array.
  * @param co the core object.
  * @return 0 on success, -1 on failure.
  */
-static int add_header(struct http_header * header, struct http_header ** headers, size_t * num, struct core_object * co);
+static int add_header(struct http_header * header, struct http_header *** headers, size_t * num, struct core_object * co);
 
 /**
  * read_entity_body
@@ -134,7 +134,7 @@ static int marshal_header(char * raw_header, struct http_request * req, struct c
     // general headers
     for (size_t i = 0; i < (sizeof(http_general_headers) / sizeof(http_general_headers[0])); i++) {
         if (strcmp(header->key, http_general_headers[i]) == 0) {
-            if (add_header(header, req->general_headers, &req->num_general_headers, co) == -1) {
+            if (add_header(header, &req->general_headers, &req->num_general_headers, co) == -1) {
                 return FAILURE;
             }
             return SUCCESS;
@@ -144,7 +144,7 @@ static int marshal_header(char * raw_header, struct http_request * req, struct c
     // request headers
     for (size_t i = 0; i < (sizeof(http_request_headers) / sizeof(http_request_headers[0])); i++) {
         if (strcmp(header->key, http_request_headers[i]) == 0) {
-            if (add_header(header, req->request_headers, &req->num_request_headers, co) == -1) {
+            if (add_header(header, &req->request_headers, &req->num_request_headers, co) == -1) {
                 return FAILURE;
             }
             return SUCCESS;
@@ -154,7 +154,7 @@ static int marshal_header(char * raw_header, struct http_request * req, struct c
     // entity headers
     for (size_t i = 0; i < (sizeof(http_entity_headers) / sizeof(http_entity_headers[0])); i++) {
         if (strcmp(header->key, http_entity_headers[i]) == 0) {
-            if (add_header(header, req->entity_headers, &req->num_entity_headers, co) == -1) {
+            if (add_header(header, &req->entity_headers, &req->num_entity_headers, co) == -1) {
                 return FAILURE;
             }
             return SUCCESS;
@@ -162,27 +162,30 @@ static int marshal_header(char * raw_header, struct http_request * req, struct c
     }
 
     // any unrecognized header is an extension header
-    if (add_header(header, req->extension_headers, &req->num_extension_headers, co) == -1) {
+    if (add_header(header, &req->extension_headers, &req->num_extension_headers, co) == -1) {
         return FAILURE;
     }
     return SUCCESS;
 }
 
-static int add_header(struct http_header * header, struct http_header ** headers, size_t * num, struct core_object * co) {
+static int add_header(struct http_header * header, struct http_header *** headers, size_t * num, struct core_object * co) {
     (*num)++;
-    headers = mm_realloc((*headers), (*num) * sizeof(struct http_header *), co->mm);
-    if (!*headers) {
+    if (*num == 1) {
+        *headers = mm_malloc(sizeof(struct http_header *), co->mm);
+    } else {
+        *headers = mm_realloc(*headers, (*num) * sizeof(struct http_header *), co->mm);
+    }
+    if (*headers == NULL) {
         (*num)--;
         SET_ERROR(co->err);
         return FAILURE;
     }
-
-    headers[(*num) - 1] = header;
+    (*headers)[(*num) - 1] = header;
     return SUCCESS;
 }
 
 static int read_entity_body(int fd, struct http_request * req, struct core_object * co) {
-    struct http_header * c_length = get_header(H_CONTENT_LENGTH, req->entity_headers, &req->num_entity_headers);
+    struct http_header * c_length = get_header(H_CONTENT_LENGTH, req->entity_headers, req->num_entity_headers);
     if (c_length) {
         size_t length = strtosize_t(c_length->value);
         if (length == 0) {
@@ -226,12 +229,13 @@ static char * read_until(int fd, char * until, struct core_object * co) {
     } while (!strstr(line, until));
 
     // reallocate to remove until from line, add null terminator
-    line_size -= strlen(until);
+    line_size -= strlen(until) + 1;
     line = mm_realloc(line, line_size, co->mm);
     if (!line) {
         SET_ERROR(co->err);
         return NULL;
     }
+    line[line_size - 1] = TERM;
 
     return line;
 }

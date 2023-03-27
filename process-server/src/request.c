@@ -16,6 +16,7 @@ struct http_request * init_http_request(struct core_object * co) {
         SET_ERROR(co->err);
         return NULL;
     }
+    memset(req, 0, sizeof (struct http_request));
 
     return req;
 }
@@ -57,17 +58,17 @@ struct http_header * init_http_header(char * header_line, struct core_object * c
     char * toks[H_TOKS];
     char * tok;
 
-    tok = litlittok(header_line, sep);
+    tok = h_litlittok(header_line, sep);
     int i = 0;
     while (tok != NULL) {
-        tok = litlittok(NULL, sep);
         if (i < H_TOKS) {
             toks[i] = tok;
         }
         i++;
+        tok = h_litlittok(NULL, sep);
     }
-    if (i + 1 != H_TOKS) {
-        (void) fprintf(stderr, "unexpected number of tokens in header: expected 2, got %i\n", i + 1);
+    if (i != H_TOKS) {
+        (void) fprintf(stderr, "unexpected number of tokens in header: expected 2, got %i\n", i);
         return NULL;
     }
 
@@ -79,7 +80,7 @@ struct http_header * init_http_header(char * header_line, struct core_object * c
 
     to_lower(toks[H_KEY]); // field names are case-insensitive (RFC section 4.2)
     header->key = mm_strdup(toks[H_KEY], co->mm);
-    header->value = mm_strdup(toks[H_VALUE], co->mm);
+    header->value = mm_strdup(trim_whitespace(toks[H_VALUE]), co->mm);
 
     return header;
 }
@@ -99,17 +100,17 @@ struct http_request_line * init_http_request_line(char * raw_request_line, struc
     char sep[2] = {SP, TERM};
     char * toks[RL_TOKS];
 
-    tok = litlittok(raw_request_line, sep);
+    tok = rl_litlittok(raw_request_line, sep);
     int i = 0;
     while(tok != NULL) {
-        tok = litlittok(NULL, sep);
         if (i < RL_TOKS) {
             toks[i] = tok;
         }
         i++;
+        tok = rl_litlittok(NULL, sep);
     }
-    if (i + 1 != RL_TOKS) {
-        (void) fprintf(stderr, "unexpected number of tokens in Request-Line: expected 3, got %i\n", i + 1);
+    if (i != RL_TOKS) {
+        (void) fprintf(stderr, "unexpected number of tokens in Request-Line: expected 3, got %i\n", i);
         return NULL;
     }
 
