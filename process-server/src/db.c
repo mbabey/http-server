@@ -1,4 +1,5 @@
 #include "../include/db.h"
+#include "../include/util.h"
 
 int db_upsert(struct core_object *co, struct state_object *so,
         void *key, size_t key_size, void *value, size_t value_size)
@@ -37,6 +38,139 @@ int db_upsert(struct core_object *co, struct state_object *so,
     
     return ret_val;
 }
+
+int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
+                 size_t data_buf_size) // NOLINT(bugprone-easily-swappable-parameters)
+{
+    char *save_file_name = NULL;
+    int  save_fd;
+    
+    if (set_string(&save_file_name, save_dir) == NULL)
+    {
+        return -1;
+    }
+    if (append_string(&save_file_name, "/") == NULL)
+    {
+        return -1;
+    }
+    if (append_string(&save_file_name, file_name) == NULL)
+    {
+        return -1;
+    }
+    
+    version_file(&save_file_name);
+    
+    save_fd = open(save_file_name, O_CREAT | O_WRONLY | O_CLOEXEC, WR_DIR_FLAGS);
+    if (save_fd == -1)
+    {
+        return -1;
+    }
+    
+    if (write(save_fd, data_buffer, data_buf_size) == -1)
+    {
+        return -1;
+    }
+    
+    free(save_file_name);
+    
+    return 0;
+}
+
+static int version_file(char **save_str)
+{
+    int  v_num            = VERSION_START_INDEX;
+    char *file_ver_suffix = NULL;
+    char *save_str_cpy    = NULL;
+    char *ext             = NULL;
+    char *ext_ptr;
+    
+    if (set_string(&save_str_cpy, *save_str) == NULL)
+    {
+        return -1;
+    }
+    
+    while (access(save_str_cpy, F_OK) == 0) // does exist
+    {
+        if (v_num > VERSION_START_INDEX)
+        {
+            if (set_string(&save_str_cpy, *save_str) == NULL)
+            {
+                return -1;
+            }
+        }
+        
+        ext_ptr = strrchr(save_str_cpy, '.');
+        if (set_string(&ext, ext_ptr) == NULL)
+        {
+            return -1;
+        }
+        
+        if (create_file_ver_suffix(&file_ver_suffix, v_num) == -1)
+        {
+            return -1;
+        }
+        
+        *ext_ptr = '\0';
+        if (append_string(&save_str_cpy, file_ver_suffix) == NULL)
+        {
+            return -1;
+        }
+        if (append_string(&save_str_cpy, ext) == NULL)
+        {
+            return -1;
+        }
+        
+        ++v_num;
+    }
+    if (set_string(save_str, save_str_cpy) == NULL)
+    {
+        return -1;
+    }
+    
+    free(file_ver_suffix);
+    free(save_str_cpy);
+    free(ext);
+    
+    return 0;
+}
+
+static int create_file_ver_suffix(char **file_ver_suffix, int v_num)
+{
+    int  v_num_len;
+    char *v_num_suffix;
+    
+    v_num_len = snprintf(NULL, 0, "%d", v_num);
+    if (v_num_len < 0)
+    {
+        return -1;
+    }
+    v_num_suffix = (char *) calloc(v_num_len + 1, sizeof(char));
+    if (v_num_suffix == NULL)
+    {
+        free(v_num_suffix);
+        return -1;
+    }
+    if (snprintf(v_num_suffix, v_num_len + 1, "%d", v_num) < 0)
+    {
+        free(v_num_suffix);
+        return -1;
+    }
+    
+    if (set_string(file_ver_suffix, "-v") == NULL)
+    {
+        free(v_num_suffix);
+        return -1;
+    }
+    if (append_string(file_ver_suffix, v_num_suffix) == NULL)
+    {
+        return -1;
+    }
+    
+    free(v_num_suffix);
+    
+    return 0;
+}
+
 
 void print_db_error(DBM *db)
 {
