@@ -120,6 +120,32 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     return 0;
 }
 
+static int post_insert_assemble_response_innards(struct core_object *co, struct http_request *request, size_t *status,
+                                                 struct http_header ***headers, char **entity_body)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    const int num_headers = 2;
+    
+    struct http_header *content_type;
+    struct http_header *content_length;
+    
+    *status      = OK_200;
+    *entity_body = request->entity_body;
+    
+    content_type   = mm_malloc(sizeof(struct http_header), co->mm);
+    content_length = mm_malloc(sizeof(struct http_header), co->mm);
+    *headers = mm_malloc((num_headers + 1) * sizeof(struct http_header *), co->mm);
+    if (!(content_type && content_length && *headers))
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    
+    
+    return 0;
+}
+
 static int store_in_fs(struct core_object *co, const struct http_request *request)
 {
     char pathname[BUFSIZ];
