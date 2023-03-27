@@ -84,6 +84,22 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
                                   strlen(request->request_line->request_URI),
                                   request->entity_body, strlen(request->entity_body));
         
+        switch (upsert_status)
+        {
+            case 0: // insert no overwrite
+            {
+                break;
+            }
+            case 1: // insert overwrite
+            {
+                break;
+            }
+            case -1: // error
+            {
+                break;
+            }
+            default:;
+        }
     } else
     {
         if (store_in_fs(co, request) == -1)
