@@ -114,7 +114,7 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
             }
             case -1: // error
             {
-                break;
+                return -1;
             }
             default:;
         }
