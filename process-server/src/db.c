@@ -4,27 +4,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define VERSION_START_INDEX 2
-
-/**
- * version_file
- * <p>
- * Add a version number to a file name, if necessary.
- * </p>
- * @param save_str - char **: file name to which a version number will be added.
- */
-static int version_file(char **save_str);
-
-/**
- * create_file_ver_suffix
- * <p>
- * Create a string in the format "-v2".
- * </p>
- * @param file_ver_suffix - char **: pointer to string to hold the suffix
- * @param v_num - int: the version number to put in the suffix
- */
-static int create_file_ver_suffix(char **file_ver_suffix, int v_num);
-
 int db_upsert(struct core_object *co, struct state_object *so,
         void *key, size_t key_size, void *value, size_t value_size)
 {
@@ -82,8 +61,6 @@ int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
         return -1;
     }
     
-    version_file(&save_file_name);
-    
     save_fd = open(save_file_name, O_CREAT | O_WRONLY | O_CLOEXEC, WR_DIR_FLAGS);
     if (save_fd == -1)
     {
@@ -99,102 +76,6 @@ int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
     
     return 0;
 }
-
-static int version_file(char **save_str)
-{
-    int  v_num            = VERSION_START_INDEX;
-    char *file_ver_suffix = NULL;
-    char *save_str_cpy    = NULL;
-    char *ext             = NULL;
-    char *ext_ptr;
-    
-    if (set_string(&save_str_cpy, *save_str) == NULL)
-    {
-        return -1;
-    }
-    
-    while (access(save_str_cpy, F_OK) == 0) // does exist
-    {
-        if (v_num > VERSION_START_INDEX)
-        {
-            if (set_string(&save_str_cpy, *save_str) == NULL)
-            {
-                return -1;
-            }
-        }
-        
-        ext_ptr = strrchr(save_str_cpy, '.');
-        if (set_string(&ext, ext_ptr) == NULL)
-        {
-            return -1;
-        }
-        
-        if (create_file_ver_suffix(&file_ver_suffix, v_num) == -1)
-        {
-            return -1;
-        }
-        
-        *ext_ptr = '\0';
-        if (append_string(&save_str_cpy, file_ver_suffix) == NULL)
-        {
-            return -1;
-        }
-        if (append_string(&save_str_cpy, ext) == NULL)
-        {
-            return -1;
-        }
-        
-        ++v_num;
-    }
-    if (set_string(save_str, save_str_cpy) == NULL)
-    {
-        return -1;
-    }
-    
-    free(file_ver_suffix);
-    free(save_str_cpy);
-    free(ext);
-    
-    return 0;
-}
-
-static int create_file_ver_suffix(char **file_ver_suffix, int v_num)
-{
-    int  v_num_len;
-    char *v_num_suffix;
-    
-    v_num_len = snprintf(NULL, 0, "%d", v_num);
-    if (v_num_len < 0)
-    {
-        return -1;
-    }
-    v_num_suffix = (char *) calloc(v_num_len + 1, sizeof(char));
-    if (v_num_suffix == NULL)
-    {
-        free(v_num_suffix);
-        return -1;
-    }
-    if (snprintf(v_num_suffix, v_num_len + 1, "%d", v_num) < 0)
-    {
-        free(v_num_suffix);
-        return -1;
-    }
-    
-    if (set_string(file_ver_suffix, "-v") == NULL)
-    {
-        free(v_num_suffix);
-        return -1;
-    }
-    if (append_string(file_ver_suffix, v_num_suffix) == NULL)
-    {
-        return -1;
-    }
-    
-    free(v_num_suffix);
-    
-    return 0;
-}
-
 
 void print_db_error(DBM *db)
 {
