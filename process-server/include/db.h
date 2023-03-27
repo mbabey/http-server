@@ -27,6 +27,7 @@ int db_upsert(struct core_object *co, struct state_object *so,
  * @param file_name - char *: the name of the file
  * @param data_buffer - char *: the file information
  * @param data_buf_size - uint32_t: the size of the file
+ * @return 0 on success, -1 on failure.
  */
 int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer, size_t data_buf_size);
 

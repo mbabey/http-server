@@ -12,6 +12,8 @@ static int http_head(struct core_object *co, struct state_object *so, struct htt
 static int http_get(struct core_object *co, struct state_object *so, struct http_request *request,
                     size_t *status, struct http_header ***headers, char **entity_body);
 
+static int store_in_fs(struct core_object *co, const struct http_request *request);
+
 int perform_method(struct core_object *co, struct state_object *so, struct http_request *request,
                    size_t *status, struct http_header ***headers, char **entity_body)
 {
@@ -34,8 +36,8 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
         http_post(co, so, request, status, headers, entity_body);
     } else
     {
-        *status = NOT_IMPLEMENTED_501;
-        *headers = NULL;
+        *status      = NOT_IMPLEMENTED_501;
+        *headers     = NULL;
         *entity_body = NULL;
     }
     
@@ -76,23 +78,41 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     to_lower(database_header->value);
     if (strcmp(database_header->value, "true") == 0)
     {
-        db_upsert(co, so, request->request_line->request_URI, strlen(request->request_line->request_URI),
-                  request->entity_body, strlen(request->entity_body));
+        int upsert_status;
+        
+        upsert_status = db_upsert(co, so, request->request_line->request_URI,
+                                  strlen(request->request_line->request_URI),
+                                  request->entity_body, strlen(request->entity_body));
+        
     } else
     {
-        char pathname[BUFSIZ];
-        
-        memset(pathname, 0, BUFSIZ);
-        if (getcwd(pathname, BUFSIZ) == NULL)
+        if (store_in_fs(co, request) == -1)
         {
-            SET_ERROR(co->err);
             return -1;
         }
-        
-        strlcat(pathname, WRITE_DIR, BUFSIZ);
-        
-        write_to_dir(pathname, request->request_line->request_URI,
-                     request->entity_body, strlen(request->entity_body));
+    }
+    
+    return 0;
+}
+
+static int store_in_fs(struct core_object *co, const struct http_request *request)
+{
+    char pathname[BUFSIZ];
+    
+    memset(pathname, 0, BUFSIZ);
+    if (getcwd(pathname, BUFSIZ) == NULL)
+    {
+        SET_ERROR(co->err);
+        return -1; // TODO: not necessarily fatal.
+    }
+    
+    strlcat(pathname, WRITE_DIR, BUFSIZ);
+    
+    if (write_to_dir(pathname, request->request_line->request_URI,
+                     request->entity_body, strlen(request->entity_body)) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1; // TODO: not necessarily fatal.
     }
     
     return 0;
