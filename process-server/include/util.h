@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#define WR_DIR_FLAGS (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
+
 /**
  * write_fully
  * <p>
@@ -173,18 +175,5 @@ char * create_dir_str(char **save_dir, const char *wr_dir, const char *client_ad
  * @param save_dir - char *: the directory path to which files will be saved for this client
  */
 int create_dir(const char *save_dir);
-
-/**
- * write_to_dir
- * <p>
- * Save the file information in data_buffer to the directory path specified by save_dir under
- * the name file_name.
- * </p>
- * @param save_dir - char *: the directory to which the file will be saved
- * @param file_name - char *: the name of the file
- * @param data_buffer - char *: the file information
- * @param data_buf_size - uint32_t: the size of the file
- */
-int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer, size_t data_buf_size);
 
 #endif //POLL_SERVER_UTIL_H

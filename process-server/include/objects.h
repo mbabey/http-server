@@ -6,6 +6,7 @@
 #include <semaphore.h>
 #include <poll.h>
 #include <netinet/in.h>
+#include <ndbm.h>
 
 #define HTTP_VERSION "HTTP/1.0" /** HTTP Version 1.0 */
 
@@ -61,9 +62,12 @@
 #define READ 0   /** Read end of child_finished_pipe or read child_finished_semaphore. */
 #define WRITE 1  /** Write end of child_finished_pipe or read child_finished_semaphore. */
 
-#define PIPE_WRITE_SEM_NAME "/pw_2f6a08"      /** Pipe write semaphore name. */
-#define DOMAIN_READ_SEM_NAME "/dr_2f6a08"     /** Domain socket read semaphore name. */
-#define DOMAIN_WRITE_SEM_NAME "/dw_2f6a08"    /** Domain socket write semaphore name. */
+#define PIPE_WRITE_SEM_NAME "/pw_2f6b08"      /** Pipe write semaphore name. */
+#define DOMAIN_READ_SEM_NAME "/dr_2f6b08"     /** Domain socket read semaphore name. */
+#define DOMAIN_WRITE_SEM_NAME "/dw_2f6b08"    /** Domain socket write semaphore name. */
+#define DB_WRITE_SEM_NAME "/db_2f6b08"        /** Database socket write semaphore name. */
+
+#define DB_NAME "db_http_2f6b08"              /** Database file name. */
 
 #define FOR_EACH_CHILD_c_IN_CHILD_PIDS for (size_t c = 0; c < NUM_CHILD_PROCESSES; ++c) /** For each loop macro for looping over child processes. */
 #define FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS for (size_t p = 2; p < POLLFDS_SIZE; ++p)   /** For each loop macro for looping over socket pollfds. */
@@ -71,16 +75,16 @@
 /** HTTP 1.0 Common Status Codes. */
 enum StatusCodes
 {
-    OK_200 = 200,
+    OK_200                    = 200,
     CREATED_201,
     ACCEPTED_202,
     NULL_203,
     NO_CONTENT_204,
-    MOVED_PERMANENTLY_301 = 301,
+    MOVED_PERMANENTLY_301     = 301,
     MOVED_TEMPORARILY_302,
     NULL_303,
     NOT_MODIFIED_304,
-    BAD_REQUEST_400 = 400,
+    BAD_REQUEST_400           = 400,
     UNAUTHORIZED_401,
     NULL_402,
     FORBIDDEN_403,
@@ -100,11 +104,13 @@ enum StatusCodes
  * assigned and handled by the loaded library.
  * </p>
  */
-struct core_object {
+struct core_object
+{
     TRACER_FUNCTION_AS(tracer);
-    struct error_saver err;
+    
+    struct error_saver    err;
     struct memory_manager *mm;
-    struct sockaddr_in listen_addr;
+    struct sockaddr_in    listen_addr;
     
     struct state_object *so;
 };
@@ -119,6 +125,8 @@ struct state_object
     int                  c_to_p_pipe_fds[2];
     sem_t                *domain_sems[2];
     sem_t                *c_to_p_pipe_sem_write;
+    sem_t                *db_sem;
+    DBM                  *db;
     struct parent_struct *parent;
     struct child_struct  *child;
 };
@@ -146,40 +154,44 @@ struct child_struct
 /**
  * Represents an HTTP 1.0 header
  */
-struct http_header {
-    char * key;
-    char * value;
+struct http_header
+{
+    char *key;
+    char *value;
 };
 
 /**
  * Represents an HTTP 1.0 request line
  */
-struct http_request_line {
-    char * method;
-    char * request_URI;
-    char * http_version;
+struct http_request_line
+{
+    char *method;
+    char *request_URI;
+    char *http_version;
 };
 
 /**
  * Represents an HTTP 1.0 request
  */
-struct http_request {
-    struct http_request_line * request_line;
+struct http_request
+{
+    struct http_request_line *request_line;
     size_t num_general_headers;
-    struct http_header ** general_headers;
+    struct http_header **general_headers;
     size_t num_request_headers;
-    struct http_header ** request_headers;
+    struct http_header **request_headers;
     size_t num_entity_headers;
-    struct http_header ** entity_headers;
+    struct http_header **entity_headers;
     size_t num_extension_headers;
-    struct http_header ** extension_headers;
-    char * entity_body;
+    struct http_header **extension_headers;
+    char               *entity_body;
 };
 
 /**
  * HTTP Response status line.
  */
-struct http_status_line {
+struct http_status_line
+{
     const char *version;
     const char *status_code;
     const char *reason_phrase;
@@ -188,9 +200,10 @@ struct http_status_line {
 /**
  * HTTP Response.
  */
-struct http_response {
+struct http_response
+{
     struct http_status_line status_line;
-    struct http_header ** headers;
+    struct http_header **headers;
     const char *entity_body;
 };
 
