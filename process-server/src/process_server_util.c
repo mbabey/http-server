@@ -61,6 +61,15 @@ static int p_open_process_server_for_listen(struct core_object *co, struct paren
  */
 static int c_setup_child(struct core_object *co, struct state_object *so);
 
+/**
+ * print_db_error
+ * <p>
+ * Print an error message based on the error code of passed.
+ * </p>
+ * @param err_code the error code
+ */
+static void print_db_error(DBM *db);
+
 struct state_object *setup_process_state(struct memory_manager *mm)
 {
     struct state_object *so;
@@ -74,7 +83,7 @@ struct state_object *setup_process_state(struct memory_manager *mm)
     return so;
 }
 
-int open_pipe_semaphores_domain_sockets(struct core_object *co, struct state_object *so)
+int open_pipe_semaphores_domain_sockets_database(struct core_object *co, struct state_object *so)
 {
     PRINT_STACK_TRACE(co->tracer);
     
@@ -96,6 +105,13 @@ int open_pipe_semaphores_domain_sockets(struct core_object *co, struct state_obj
         return -1;
     }
     
+    so->db = dbm_open(DB_NAME, (O_RDWR | O_CREAT), (S_IRWXU | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH));
+    if (so->db == (DBM *) 0)
+    {
+        print_db_error(so->db);
+        return -1;
+    }
+    
     return 0;
 }
 
@@ -106,11 +122,13 @@ static int open_semaphores(struct core_object *co, struct state_object *so)
     sem_t *pipe_write_sem;
     sem_t *domain_read_sem;
     sem_t *domain_write_sem;
+    sem_t *db_write_sem;
     
     // Value 0 will block; value 1 will allow first process to enter, then behave as if value was 0.
     pipe_write_sem   = sem_open(PIPE_WRITE_SEM_NAME, O_CREAT, S_IRUSR | S_IWUSR, 1);
     domain_read_sem  = sem_open(DOMAIN_READ_SEM_NAME, O_CREAT, S_IRUSR | S_IWUSR, 0);
     domain_write_sem = sem_open(DOMAIN_WRITE_SEM_NAME, O_CREAT, S_IRUSR | S_IWUSR, 1);
+    db_write_sem     = sem_open(DB_WRITE_SEM_NAME, O_CREAT, S_IRUSR | S_IWUSR, 1);
     if (pipe_write_sem == SEM_FAILED || domain_read_sem == SEM_FAILED || domain_write_sem == SEM_FAILED)
     {
         SET_ERROR(co->err);
@@ -118,16 +136,19 @@ static int open_semaphores(struct core_object *co, struct state_object *so)
         sem_close(pipe_write_sem);
         sem_close(domain_read_sem);
         sem_close(domain_write_sem);
+        sem_close(db_write_sem);
         // Unlinking an unopened semaphore will return -1 and set errno = ENOENT, which can be ignored.
         sem_unlink(PIPE_WRITE_SEM_NAME);
         sem_unlink(DOMAIN_READ_SEM_NAME);
         sem_unlink(DOMAIN_WRITE_SEM_NAME);
+        sem_unlink(DB_WRITE_SEM_NAME);
         return -1;
     }
     
     so->c_to_p_pipe_sem_write = pipe_write_sem;
     so->domain_sems[READ]  = domain_read_sem;
     so->domain_sems[WRITE] = domain_write_sem;
+    so->db_sem = db_write_sem;
     
     return 0;
 }
@@ -273,13 +294,15 @@ void p_destroy_parent_state(struct core_object *co, struct state_object *so, str
     }
     
     mm_free(co->mm, parent);
-
+    
     sem_close(so->c_to_p_pipe_sem_write);
     sem_close(so->domain_sems[READ]);
     sem_close(so->domain_sems[WRITE]);
+    sem_close(so->db_sem);
     sem_unlink(PIPE_WRITE_SEM_NAME);
     sem_unlink(DOMAIN_READ_SEM_NAME);
     sem_unlink(DOMAIN_WRITE_SEM_NAME);
+    sem_unlink(DB_WRITE_SEM_NAME);
 }
 
 void c_destroy_child_state(struct core_object *co, struct state_object *so, struct child_struct *child)
@@ -309,4 +332,76 @@ void close_fd_report_undefined_error(int fd, const char *err_msg)
             }
         }
     }
+}
+
+static void print_db_error(DBM *db)
+{
+    int err_code;
+    
+    err_code = dbm_error(db); // NOLINT(concurrency-mt-unsafe) : No threads here
+    dbm_clearerr(db);         // NOLINT(concurrency-mt-unsafe) : No threads here
+    
+    // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers) : Numbers fine here.
+    switch (err_code)
+    {
+        case 1:
+        {
+            (void) fprintf(stdout, "Database error occurred: The specified key was not found in the database.\n");
+            break;
+        }
+        case 2:
+        {
+            (void) fprintf(stdout, "Database error occurred: The database file could not be opened.\n");
+            break;
+        }
+        case 3:
+        {
+            (void) fprintf(stdout, "Database error occurred: The database file could not be created.\n");
+            break;
+        }
+        case 4:
+        {
+            (void) fprintf(stdout,
+                           "Database error occurred: An I/O error occurred while reading or writing the database file.\n");
+            break;
+        }
+        case 5:
+        {
+            (void) fprintf(stdout, "Database error occurred: The database was not opened in read-write mode.\n");
+            break;
+        }
+        case 6:
+        {
+            (void) fprintf(stdout, "Database error occurred: The database is already open and cannot be reopened.\n");
+            break;
+        }
+        case 7:
+        {
+            (void) fprintf(stdout,
+                           "Database error occurred: The specified key or value was too long to be stored in the database.\n");
+            break;
+        }
+        case 8:
+        {
+            (void) fprintf(stdout, "Database error occurred: A memory allocation error occurred.\n");
+            break;
+        }
+        case 9:
+        {
+            (void) fprintf(stdout, "Database error occurred: The database file format is invalid.\n");
+            break;
+        }
+        case 10:
+        {
+            (void) fprintf(stdout, "Database error occurred: The database file is too old and needs to be rebuilt.\n");
+            break;
+        }
+        case 11:
+        {
+            (void) fprintf(stdout, "Database error occurred: An unknown error occurred.\n");
+            break;
+        }
+        default:;
+    }
+    // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 }

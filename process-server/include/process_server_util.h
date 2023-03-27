@@ -14,7 +14,7 @@
 struct state_object *setup_process_state(struct memory_manager *mm);
 
 /**
- * open_pipe_semaphores_domain_sockets
+ * open_pipe_semaphores_domain_sockets_database
  * <p>
  * Open the domain socket and set up the semaphores for controlling access to the child-parent pipe,
  * the domain socket, and the log file.
@@ -23,7 +23,7 @@ struct state_object *setup_process_state(struct memory_manager *mm);
  * @param so the state object
  * @return 0 on success, -1 and set errno on failure
  */
-int open_pipe_semaphores_domain_sockets(struct core_object *co, struct state_object *so);
+int open_pipe_semaphores_domain_sockets_database(struct core_object *co, struct state_object *so);
 
 /**
  * fork_child_processes

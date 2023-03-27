@@ -210,7 +210,7 @@ int setup_process_server(struct core_object *co, struct state_object *so)
     
     co->so = so;
     
-    if (open_pipe_semaphores_domain_sockets(co, so) == -1)
+    if (open_pipe_semaphores_domain_sockets_database(co, so) == -1)
     {
         return -1;
     }
@@ -689,5 +689,10 @@ void destroy_process_state(struct core_object *co, struct state_object *so)
     } else if (so->child)
     {
         c_destroy_child_state(co, so, so->child);
+    }
+    
+    if (so->db)
+    {
+        dbm_close(so->db);
     }
 }
