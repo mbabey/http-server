@@ -1,5 +1,6 @@
 #include "../include/process_server_util.h"
 #include "../include/manager.h"
+#include "../include/db.h"
 
 #include <request.h>
 
@@ -60,15 +61,6 @@ static int p_open_process_server_for_listen(struct core_object *co, struct paren
  * @return 0 on success, -1 and set errno of failure.
  */
 static int c_setup_child(struct core_object *co, struct state_object *so);
-
-/**
- * print_db_error
- * <p>
- * Print an error message based on the error code of passed.
- * </p>
- * @param err_code the error code
- */
-static void print_db_error(DBM *db);
 
 struct state_object *setup_process_state(struct memory_manager *mm)
 {
@@ -332,76 +324,4 @@ void close_fd_report_undefined_error(int fd, const char *err_msg)
             }
         }
     }
-}
-
-static void print_db_error(DBM *db)
-{
-    int err_code;
-    
-    err_code = dbm_error(db); // NOLINT(concurrency-mt-unsafe) : No threads here
-    dbm_clearerr(db);         // NOLINT(concurrency-mt-unsafe) : No threads here
-    
-    // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers) : Numbers fine here.
-    switch (err_code)
-    {
-        case 1:
-        {
-            (void) fprintf(stdout, "Database error occurred: The specified key was not found in the database.\n");
-            break;
-        }
-        case 2:
-        {
-            (void) fprintf(stdout, "Database error occurred: The database file could not be opened.\n");
-            break;
-        }
-        case 3:
-        {
-            (void) fprintf(stdout, "Database error occurred: The database file could not be created.\n");
-            break;
-        }
-        case 4:
-        {
-            (void) fprintf(stdout,
-                           "Database error occurred: An I/O error occurred while reading or writing the database file.\n");
-            break;
-        }
-        case 5:
-        {
-            (void) fprintf(stdout, "Database error occurred: The database was not opened in read-write mode.\n");
-            break;
-        }
-        case 6:
-        {
-            (void) fprintf(stdout, "Database error occurred: The database is already open and cannot be reopened.\n");
-            break;
-        }
-        case 7:
-        {
-            (void) fprintf(stdout,
-                           "Database error occurred: The specified key or value was too long to be stored in the database.\n");
-            break;
-        }
-        case 8:
-        {
-            (void) fprintf(stdout, "Database error occurred: A memory allocation error occurred.\n");
-            break;
-        }
-        case 9:
-        {
-            (void) fprintf(stdout, "Database error occurred: The database file format is invalid.\n");
-            break;
-        }
-        case 10:
-        {
-            (void) fprintf(stdout, "Database error occurred: The database file is too old and needs to be rebuilt.\n");
-            break;
-        }
-        case 11:
-        {
-            (void) fprintf(stdout, "Database error occurred: An unknown error occurred.\n");
-            break;
-        }
-        default:;
-    }
-    // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 }
