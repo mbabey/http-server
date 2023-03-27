@@ -10,29 +10,6 @@
 
 #define BASE_10 10
 
-#define VERSION_START_INDEX 2
-
-#define WR_DIR_FLAGS (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
-
-/**
- * version_file
- * <p>
- * Add a version number to a file name, if necessary.
- * </p>
- * @param save_str - char **: file name to which a version number will be added.
- */
-static int version_file(char **save_str);
-
-/**
- * create_file_ver_suffix
- * <p>
- * Create a string in the format "-v2".
- * </p>
- * @param file_ver_suffix - char **: pointer to string to hold the suffix
- * @param v_num - int: the version number to put in the suffix
- */
-static int create_file_ver_suffix(char **file_ver_suffix, int v_num);
-
 int write_fully(int fd, void *data, size_t size)
 {
     ssize_t result;
