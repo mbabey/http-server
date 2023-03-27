@@ -80,7 +80,6 @@ static int validate_ip(struct sockaddr_in *addr, const char *ip_addr_str, TRACER
 
 int setup_core_object(struct core_object *co, int argc, char **argv)
 {
-    PRINT_STACK_TRACE(co->tracer);
     memset(co, 0, sizeof(struct core_object));
     
     co->mm = init_mem_manager();

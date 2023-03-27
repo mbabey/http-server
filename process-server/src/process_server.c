@@ -1,11 +1,13 @@
 #include "../include/objects.h"
 #include "../include/process_server.h"
 #include "../include/process_server_util.h"
-#include "../include/response.h"
+#include <read.h>
+#include <request.h>
+#include <util.h>
+#include <response.h>
 
 #include <arpa/inet.h>
 #include <errno.h>
-#include <mem_manager/manager.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <signal.h>
@@ -572,11 +574,16 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
 {
     PRINT_STACK_TRACE(co->tracer);
     
+    struct http_request request;
+    memset(&request, 0, sizeof(struct http_request));
+
+    // TODO: reorganize this to be consistent with the request
     size_t              status;
     struct http_header  **headers;
     char                *entity_body;
-    
-    // receive and parse http request
+
+    // TODO: handle this result
+    int result = read_request(child->client_fd_local, &request, co);
     
     // TODO: handle some action dictated by the request
     // function here should set variable status as a value of enum StatusCodes
@@ -584,11 +591,12 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     // function here should create or an entity body or assign NULL to *entity_body
     
     // assemble and send http response
+    // this function takes the status and makes an appropriate response
+
     if (assemble_send_response(co, child->client_fd_local, status, headers, entity_body) == -1)
     {
         return -1;
     }
-    
     return 0;
 }
 
