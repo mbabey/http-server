@@ -152,10 +152,13 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     int                overwrite_status;
     struct http_header *database_header;
     struct http_header *content_length_header;
+    size_t             entity_body_size;
     
     // Read headers to determine if database or file system
-    database_header = get_header("database", request->extension_headers, request->num_extension_headers);
+    database_header       = get_header("database", request->extension_headers, request->num_extension_headers);
     content_length_header = get_header("content-length", request->request_headers, request->num_request_headers);
+    
+    entity_body_size = strtol(content_length_header->value, NULL, 10);
     
     // Store with key as URI
     to_lower(database_header->value);
@@ -164,13 +167,12 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
         datum key;
         datum value;
         
-        key.dptr    = request->request_line->request_URI;
-        key.dsize   = strlen(request->request_line->request_URI);
-        value.dptr  = *entity_body;
-        value.dsize = strtol(content_length_header->value, NULL, 10);
+        key.dptr   = request->request_line->request_URI;
+        key.dsize  = strlen(request->request_line->request_URI);
+        value.dptr = *entity_body;
+        value.dsize = timestamp_size + entity_body_size;
         
         overwrite_status = db_upsert(co, DB_NAME, so->db_sem, &key, &value);
-        
     } else
     {
         overwrite_status = store_in_fs(co, request);
