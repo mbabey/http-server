@@ -7,9 +7,11 @@
 #include <sys/fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
 #include "manager.h"
 
 #define BASE_10 10
+#define HTTP_TIME_FORMAT "%a, %d %b %Y %H:%M:%S %Z"
 
 int write_fully(int fd, void *data, size_t size)
 {
@@ -321,5 +323,53 @@ int create_dir(const char *save_dir)
     
     free(path);
     
+    return 0;
+}
+
+
+int http_time_now(char dst[HTTP_TIME_LEN]) {
+    time_t now = time(0);
+    struct tm tm = *gmtime(&now);
+    if (strftime(dst, HTTP_TIME_LEN, HTTP_TIME_FORMAT, &tm) == 0) {
+        (void) fprintf(stderr, "error getting current HTTP time\n");
+        return -1;
+    }
+    return 0;
+}
+
+time_t http_time_to_time_t(char http_time[HTTP_TIME_LEN]) {
+    struct tm tm;
+    time_t t;
+
+    if (strptime(http_time, HTTP_TIME_FORMAT, &tm) == NULL) {
+        (void) fprintf(stderr, "error converting HTTP time to time_t time: converting t to tm struct\n");
+        return -1;
+    }
+
+    t = mktime(&tm);
+    if (t == -1) {
+        (void) fprintf(stderr, "error converting HTTP time to time_t time: converting t to time_t\n");
+        return -1;
+    }
+
+    return t;
+}
+
+int compare_http_time(char t1_str[HTTP_TIME_LEN], char t2_str[HTTP_TIME_LEN]) {
+    time_t t1, t2;
+    double diff;
+
+    t1 = http_time_to_time_t(t1_str);
+    if (t1 == -1) {
+        return -1;
+    }
+    t2 = http_time_to_time_t(t2_str);
+    if (t2 == -1) {
+        return -1;
+    }
+    diff = difftime(t1, t2);
+    if (diff > 0) {
+        return 1;
+    }
     return 0;
 }
