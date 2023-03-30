@@ -42,36 +42,6 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
     return ret_val;
 }
 
-int safe_dbm_store(struct core_object *co, const char *db_name, sem_t *sem, datum *key, datum *value, int store_flags)
-{
-    DBM *db;
-    int status;
-    
-    if (sem_wait(sem) == -1)
-    {
-        SET_ERROR(co->err);
-        return -1;
-    }
-    // NOLINTBEGIN(concurrency-mt-unsafe) : Protected
-    db = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
-    if (db == (DBM *) 0)
-    {
-        SET_ERROR(co->err);
-        sem_post(sem);
-        return -1;
-    }
-    status = dbm_store(db, *key, *value, store_flags);
-    if (!key->dptr && dbm_error(db)) // NOLINT(concurrency-mt-unsafe) : No threads here
-    {
-        print_db_error(db);
-    }
-    dbm_close(db);
-    // NOLINTEND(concurrency-mt-unsafe)
-    sem_post(sem);
-    
-    return status;
-}
-
 int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
                  size_t data_buf_size) // NOLINT(bugprone-easily-swappable-parameters)
 {
