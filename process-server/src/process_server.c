@@ -605,7 +605,7 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
         return -1;
     }
 
-    free_all_headers(co, headers);
+    free_http_data(co, headers, entity_body);
 
     return 0;
 }

@@ -121,6 +121,17 @@ void destroy_http_header(struct http_header * header, struct core_object * co);
 void free_all_headers(struct core_object *co, struct http_header **headers);
 
 /**
+ * free_http_data
+ * <p>
+ * Free all headers and the entity body in the request.
+ * </p>
+ * @param co the core object
+ * @param headers the header list
+ * @param entity_body the entity body
+ */
+void free_http_data(struct core_object *co, struct http_header **headers, char *entity_body);
+
+/**
  * strtosize_t
  * <p>
  * Parses and returns a size_t value from a string.
