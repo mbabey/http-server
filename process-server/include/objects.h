@@ -24,6 +24,7 @@
 #define H_AUTHORIZATION "authorization"
 #define H_CONTENT_ENCODING "content-encoding"
 #define H_CONTENT_LENGTH "content-length"
+#define H_CONTENT_LENGTH_LENGTH 11
 #define H_CONTENT_TYPE "content-type"
 #define H_DATE "date"
 #define H_EXPIRES "expires"

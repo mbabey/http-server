@@ -8,6 +8,8 @@
 
 #define WR_DIR_FLAGS (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
 
+#define HTTP_TIME_LEN 256 // TODO: too big, could be more precise
+
 /**
  * write_fully
  * <p>
@@ -197,5 +199,36 @@ char * create_dir_str(char **save_dir, const char *wr_dir, const char *client_ad
  * @param save_dir - char *: the directory path to which files will be saved for this client
  */
 int create_dir(const char *save_dir);
+
+/**
+ * http_time_now
+ * <p>
+ * Creates an HTTP 1.0 compliant time from the current time.
+ * </p>
+ * @param dst where to write the time.
+ * @return 0 on success, -1 on failure.
+ */
+int http_time_now(char dst[HTTP_TIME_LEN]);
+
+/**
+ * http_time_to_time_t
+ * <p>
+ * Converts an HTTP 1.0 time string to a time_t value.
+ * </p>
+ * @param http_time the string to convert.
+ * @return the time value on success, -1 on failure.
+ */
+time_t http_time_to_time_t(char http_time[HTTP_TIME_LEN]);
+
+/**
+ * compare_http_time
+ * <p>
+ * Compares two HTTP 1.0 times.
+ * </p>
+ * @param time_1 the first time to compare.
+ * @param time_2 the second time to compare.
+ * @return 1 if time_1 > time_2, and 0 if time_2 > time_1. -1 on error.
+ */
+int compare_http_time(char time_1[HTTP_TIME_LEN], char time_2[HTTP_TIME_LEN]);
 
 #endif //POLL_SERVER_UTIL_H
