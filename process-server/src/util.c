@@ -173,6 +173,8 @@ void free_all_headers(struct core_object *co, struct http_header **headers)
     {
         destroy_http_header(*headers, co);
     }
+    
+    mm_free(co->mm, headers);
 }
 
 void destroy_http_header(struct http_header * header, struct core_object * co) {

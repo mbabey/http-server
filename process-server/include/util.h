@@ -113,7 +113,7 @@ void destroy_http_header(struct http_header * header, struct core_object * co);
 /**
  * free_all_headers
  * <p>
- * Free all headers in a null-terminated list of headers.
+ * Free all headers in a null-terminated list of headers, then free the list of headers.
  * </p>
  * @param co the core object
  * @param headers the list of headers
