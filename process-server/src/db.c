@@ -4,46 +4,46 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int db_upsert(struct core_object *co, struct state_object *so,
-        void *key, size_t key_size, void *value, size_t value_size)
+int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *key, datum *value)
 {
     PRINT_STACK_TRACE(co->tracer);
     
     int status;
     int ret_val;
+    DBM *db;
     
-    datum d_key;
-    datum d_value;
-    
-    d_key.dptr = key;
-    d_key.dsize = key_size;
-    d_value.dptr = value;
-    d_value.dsize = value_size;
-    
-    if (sem_wait(so->db_sem) == -1)
+    if (sem_wait(sem) == -1)
     {
         SET_ERROR(co->err);
         return -1;
     }
-    status = dbm_store(so->db, d_key, d_value, DBM_INSERT);
+    db = dbm_open(db_name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    status = dbm_store(db, *key, *value, DBM_INSERT);
+    if (db == (DBM *) 0)
+    {
+        SET_ERROR(co->err);
+        sem_post(sem);
+        return -1;
+    }
     ret_val = status; // ret_val will be 1, 0, or -1
     if (status == 1)
     {
-        status = dbm_store(so->db, d_key, d_value, DBM_REPLACE);
+        status = dbm_store(db, *key, *value, DBM_REPLACE);
     }
-    sem_post(so->db_sem);
+    dbm_close(db);
+    sem_post(sem);
     
     if (status == -1) // If an error occurred in the insert or replace.
     {
-        print_db_error(so->db);
+        print_db_error(db);
         ret_val = -1;
     }
     
     return ret_val;
 }
-
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
-                 size_t data_buf_size) // NOLINT(bugprone-easily-swappable-parameters)
+                 size_t data_buf_size)
 {
     char *save_file_name = NULL;
     int  save_fd;
@@ -61,7 +61,16 @@ int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
         return -1;
     }
     
-    save_fd = open(save_file_name, O_CREAT | O_WRONLY | O_CLOEXEC, WR_DIR_FLAGS);
+    int ret_val;
+    
+    if (access(save_file_name, F_OK) == 0)
+    {
+        ret_val = 1;
+    } else
+    {
+        ret_val = 0;
+    }
+    save_fd = open(save_file_name, O_CREAT | O_WRONLY | O_CLOEXEC | O_TRUNC, WR_DIR_FLAGS);
     if (save_fd == -1)
     {
         return -1;
@@ -72,9 +81,10 @@ int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
         return -1;
     }
     
+    close(save_fd);
     free(save_file_name);
     
-    return 0;
+    return ret_val;
 }
 
 void print_db_error(DBM *db)
