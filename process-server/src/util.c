@@ -189,6 +189,8 @@ void free_all_headers(struct core_object *co, struct http_header **headers)
 
 void free_http_data(struct core_object *co, struct http_header **headers, char *entity_body)
 {
+    PRINT_STACK_TRACE(co->tracer);
+    
     free_all_headers(co, headers);
     mm_free(co->mm, entity_body);
 }
