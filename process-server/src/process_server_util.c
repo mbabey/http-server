@@ -97,13 +97,6 @@ int open_pipe_semaphores_domain_sockets_database(struct core_object *co, struct 
         return -1;
     }
     
-    so->db = dbm_open(DB_NAME, (O_RDWR | O_CREAT), (S_IRWXU | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH));
-    if (so->db == (DBM *) 0)
-    {
-        print_db_error(so->db);
-        return -1;
-    }
-    
     return 0;
 }
 

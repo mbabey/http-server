@@ -694,9 +694,4 @@ void destroy_process_state(struct core_object *co, struct state_object *so)
     {
         c_destroy_child_state(co, so, so->child);
     }
-    
-    if (so->db)
-    {
-        dbm_close(so->db);
-    }
 }

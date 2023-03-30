@@ -252,7 +252,7 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     
     // Read headers to determine if database or file system
     database_header       = get_header("database", request->extension_headers, request->num_extension_headers);
-    content_length_header = get_header("content-length", request->request_headers, request->num_request_headers);
+    content_length_header = get_header(H_CONTENT_LENGTH, request->request_headers, request->num_request_headers);
     
     entity_body_size = strtol(content_length_header->value, NULL, 10);
     
@@ -354,8 +354,8 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
     memset(entity_body_size, 0, CONTENT_LENGTH_MAX_DIGITS);
     sprintf(entity_body_size, "%lu", strlen(*entity_body));
     
-    content_type   = set_header(co, "content-type", "text/html");
-    content_length = set_header(co, "content-length", entity_body_size);
+    content_type   = set_header(co, H_CONTENT_TYPE, "text/html");
+    content_length = set_header(co, H_CONTENT_LENGTH, entity_body_size);
     
     offset = 0;
     *(*headers + offset++) = content_type;
