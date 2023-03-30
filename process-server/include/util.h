@@ -111,6 +111,16 @@ struct http_header *set_header(struct core_object *co, const char *key, const ch
 void destroy_http_header(struct http_header * header, struct core_object * co);
 
 /**
+ * free_all_headers
+ * <p>
+ * Free all headers in a null-terminated list of headers.
+ * </p>
+ * @param co the core object
+ * @param headers the list of headers
+ */
+void free_all_headers(struct core_object *co, struct http_header **headers);
+
+/**
  * strtosize_t
  * <p>
  * Parses and returns a size_t value from a string.

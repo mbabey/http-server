@@ -605,12 +605,10 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
         return -1;
     }
 
-//    free_all_headers(co, headers);
-    
-    
+    free_all_headers(co, headers);
+
     return 0;
 }
-
 
 static int c_get_file_description_from_domain_socket(struct core_object *co, struct state_object *so,
                                                      struct child_struct *child)

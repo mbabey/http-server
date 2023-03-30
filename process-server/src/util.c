@@ -165,6 +165,16 @@ struct http_header *set_header(struct core_object *co, const char *key, const ch
     return header;
 }
 
+void free_all_headers(struct core_object *co, struct http_header **headers)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    for (; *headers; headers++)
+    {
+        destroy_http_header(*headers, co);
+    }
+}
+
 void destroy_http_header(struct http_header * header, struct core_object * co) {
     if (header->key) {
         mm_free(co->mm, header->key);
