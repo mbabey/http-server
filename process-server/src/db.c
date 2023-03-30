@@ -41,9 +41,9 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
     
     return ret_val;
 }
-
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
-                 size_t data_buf_size) // NOLINT(bugprone-easily-swappable-parameters)
+                 size_t data_buf_size)
 {
     char *save_file_name = NULL;
     int  save_fd;
@@ -61,7 +61,16 @@ int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
         return -1;
     }
     
-    save_fd = open(save_file_name, O_CREAT | O_WRONLY | O_CLOEXEC, WR_DIR_FLAGS);
+    int ret_val;
+    
+    if (access(save_file_name, F_OK) == 0)
+    {
+        ret_val = 1;
+    } else
+    {
+        ret_val = 0;
+    }
+    save_fd = open(save_file_name, O_CREAT | O_WRONLY | O_CLOEXEC | O_TRUNC, WR_DIR_FLAGS);
     if (save_fd == -1)
     {
         return -1;
@@ -72,9 +81,10 @@ int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
         return -1;
     }
     
+    close(save_fd);
     free(save_file_name);
     
-    return 0;
+    return ret_val;
 }
 
 void print_db_error(DBM *db)
