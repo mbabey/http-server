@@ -4,6 +4,7 @@
 #include "../include/util.h"
 
 #include <unistd.h>
+#include <stdlib.h>
 
 #define CONTENT_LENGTH_MAX_DIGITS 32 /** The maximum number of digits acceptable for the content size. */
 
@@ -147,7 +148,9 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
 {
     PRINT_STACK_TRACE(co->tracer);
     
+    int overwrite_status;
     struct http_header *database_header;
+    struct http_header *content_length_header;
     
     // Read headers to determine if database or file system
     // TODO: which one of these is it in?
@@ -156,46 +159,53 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     database_header = get_header("database", request->general_headers, request->num_general_headers);
     database_header = get_header("database", request->extension_headers, request->num_extension_headers);
     
+    content_length_header = get_header("content-length", request->request_headers, request->num_request_headers);
+    content_length_header = get_header("content-length", request->entity_headers, request->num_entity_headers);
+    content_length_header = get_header("content-length", request->general_headers, request->num_general_headers);
+    content_length_header = get_header("content-length", request->extension_headers, request->num_extension_headers);
+    
     // Store with key as URI
     to_lower(database_header->value);
     if (strcmp(database_header->value, "true") == 0)
     {
-        int upsert_status;
+        datum key;
+        datum value;
         
-        upsert_status = db_upsert(co, so, request->request_line->request_URI,
-                                  strlen(request->request_line->request_URI),
-                                  request->entity_body, strlen(request->entity_body));
+        key.dptr = request->request_line->request_URI;
+        key.dsize = strlen(request->request_line->request_URI);
+        value.dptr = *entity_body;
+        value.dsize = strtol(content_length_header->value, NULL, 10);
         
-        switch (upsert_status)
+        overwrite_status = db_upsert(co, DB_NAME, so->db_sem, &key, &value);
+        
+    } else
+    {
+        overwrite_status = store_in_fs(co, request);
+    }
+    
+    switch (overwrite_status)
+    {
+        case 0: // insert no overwrite
         {
-            case 0: // insert no overwrite
-            {
-                if (post_insert_assemble_response_innards(co, request, status, headers, entity_body) == -1)
-                {
-                    return -1;
-                }
-                break;
-            }
-            case 1: // insert overwrite
-            {
-                if (post_overwrite_assemble_response_innards(co, request, status, headers, entity_body) == -1)
-                {
-                    return -1;
-                }
-                break;
-            }
-            case -1: // error
+            if (post_insert_assemble_response_innards(co, request, status, headers, entity_body) == -1)
             {
                 return -1;
             }
-            default:;
+            break;
         }
-    } else
-    {
-        if (store_in_fs(co, request) == -1) // TODO: should indicate whether overwrite occurred
+        case 1: // insert overwrite
+        {
+            if (post_overwrite_assemble_response_innards(co, request, status, headers, entity_body) == -1)
+            {
+                return -1;
+            }
+            break;
+        }
+        case -1: // error
         {
             return -1;
         }
+        default:;
     }
     
     return 0;

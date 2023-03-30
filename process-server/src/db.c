@@ -4,42 +4,72 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int db_upsert(struct core_object *co, struct state_object *so,
-        void *key, size_t key_size, void *value, size_t value_size)
+int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *key, datum *value)
 {
     PRINT_STACK_TRACE(co->tracer);
     
     int status;
     int ret_val;
+    DBM *db;
     
-    datum d_key;
-    datum d_value;
-    
-    d_key.dptr = key;
-    d_key.dsize = key_size;
-    d_value.dptr = value;
-    d_value.dsize = value_size;
-    
-    if (sem_wait(so->db_sem) == -1)
+    if (sem_wait(sem) == -1)
     {
         SET_ERROR(co->err);
         return -1;
     }
-    status = dbm_store(so->db, d_key, d_value, DBM_INSERT);
+    db = dbm_open(db_name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    status = dbm_store(db, *key, *value, DBM_INSERT);
+    if (db == (DBM *) 0)
+    {
+        SET_ERROR(co->err);
+        sem_post(sem);
+        return -1;
+    }
     ret_val = status; // ret_val will be 1, 0, or -1
     if (status == 1)
     {
-        status = dbm_store(so->db, d_key, d_value, DBM_REPLACE);
+        status = dbm_store(db, *key, *value, DBM_REPLACE);
     }
-    sem_post(so->db_sem);
+    dbm_close(db);
+    sem_post(sem);
     
     if (status == -1) // If an error occurred in the insert or replace.
     {
-        print_db_error(so->db);
+        print_db_error(db);
         ret_val = -1;
     }
     
     return ret_val;
+}
+
+int safe_dbm_store(struct core_object *co, const char *db_name, sem_t *sem, datum *key, datum *value, int store_flags)
+{
+    DBM *db;
+    int status;
+    
+    if (sem_wait(sem) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    // NOLINTBEGIN(concurrency-mt-unsafe) : Protected
+    db = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
+    if (db == (DBM *) 0)
+    {
+        SET_ERROR(co->err);
+        sem_post(sem);
+        return -1;
+    }
+    status = dbm_store(db, *key, *value, store_flags);
+    if (!key->dptr && dbm_error(db)) // NOLINT(concurrency-mt-unsafe) : No threads here
+    {
+        print_db_error(db);
+    }
+    dbm_close(db);
+    // NOLINTEND(concurrency-mt-unsafe)
+    sem_post(sem);
+    
+    return status;
 }
 
 int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,

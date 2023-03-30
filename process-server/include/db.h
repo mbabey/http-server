@@ -14,8 +14,7 @@
  * @param value the value to upsert
  * @return 0 on success and no overwrite, 1 on success and overwrite, -1 and set err on failure
  */
-int db_upsert(struct core_object *co, struct state_object *so,
-              void *key, size_t key_size, void *value, size_t value_size);
+int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *key, datum *value);
 
 /**
  * write_to_dir
