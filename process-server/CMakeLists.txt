@@ -41,7 +41,7 @@ set(HEADER_LIST
         #=vvvv= INCLUDES FOR DUMMY MAIN =vvvv=#
         )
 
-set(COMPILE_AS_LIBRARY FALSE)
+set(COMPILE_AS_LIBRARY FALSE) # FALSE = compile as executable
 set(SANITIZE TRUE)
 
 add_compile_definitions(_POSIX_C_SOURCE=200809L)

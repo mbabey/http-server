@@ -246,16 +246,19 @@ static int serialize_http_response(struct core_object *co, char **dst_buffer, si
     // Serialize the headers.
     // Format: field-name ":" [ field-value ] CRLF
     headers = src_response->headers;
-    for (; *headers; ++headers)
+    if (headers)
     {
-        strcpy((*dst_buffer + byte_offset), (*headers)->key);
-        byte_offset += strlen((*headers)->key);
-        strcpy((*dst_buffer + byte_offset), COLON_SP_STR);
-        byte_offset += COLON_SP_SIZE;
-        strcpy((*dst_buffer + byte_offset), (*headers)->value);
-        byte_offset += strlen((*headers)->value);
-        strcpy((*dst_buffer + byte_offset), CRLF_STR);
-        byte_offset += CRLF_SIZE;
+        for (; *headers; ++headers)
+        {
+            strcpy((*dst_buffer + byte_offset), (*headers)->key);
+            byte_offset += strlen((*headers)->key);
+            strcpy((*dst_buffer + byte_offset), COLON_SP_STR);
+            byte_offset += COLON_SP_SIZE;
+            strcpy((*dst_buffer + byte_offset), (*headers)->value);
+            byte_offset += strlen((*headers)->value);
+            strcpy((*dst_buffer + byte_offset), CRLF_STR);
+            byte_offset += CRLF_SIZE;
+        }
     }
     
     strcpy((*dst_buffer + byte_offset), CRLF_STR);

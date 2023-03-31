@@ -1,4 +1,5 @@
 #include "../include/db.h"
+#include "../include/manager.h"
 #include "../include/util.h"
 
 #include <stdlib.h>
@@ -17,7 +18,7 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
         SET_ERROR(co->err);
         return -1;
     }
-    db = dbm_open(db_name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    db = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
     status = dbm_store(db, *key, *value, DBM_INSERT);
     if (db == (DBM *) 0)
     {
@@ -41,6 +42,66 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
     
     return ret_val;
 }
+
+int safe_dbm_fetch(struct core_object *co, const char *db_name, sem_t *sem, datum *key, uint8_t **serial_buffer)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    int   ret_val;
+    DBM   *db;
+    datum value;
+    
+    if (sem_wait(sem) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    // NOLINTBEGIN(concurrency-mt-unsafe) : Protected
+    db = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
+    if (db == (DBM *) 0)
+    {
+        SET_ERROR(co->err);
+        sem_post(sem);
+        return -1;
+    }
+    value = dbm_fetch(db, (*key));
+    if (!value.dptr && dbm_error(db))
+    {
+        print_db_error(db);
+    }
+    ret_val = copy_dptr_to_buffer(co, serial_buffer, &value);
+    dbm_close(db);
+    // NOLINTEND(concurrency-mt-unsafe) : Protected
+    sem_post(sem);
+    
+    return ret_val;
+}
+
+int copy_dptr_to_buffer(struct core_object *co, uint8_t **buffer, datum *value)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    int ret_val;
+    
+    if (value->dptr)
+    {
+        *buffer = mm_malloc(value->dsize, co->mm);
+        if (!*buffer)
+        {
+            SET_ERROR(co->err);
+            return -1;
+        }
+        memcpy(*buffer, value->dptr, value->dsize);
+        
+        ret_val = 0;
+    } else
+    {
+        ret_val = 1;
+    }
+    
+    return ret_val;
+}
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
                  size_t data_buf_size)

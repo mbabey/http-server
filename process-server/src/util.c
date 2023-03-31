@@ -175,6 +175,26 @@ void destroy_http_header(struct http_header * header, struct core_object * co) {
     mm_free(co->mm, header);
 }
 
+void free_all_headers(struct core_object *co, struct http_header **headers)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    for (; *headers; headers++)
+    {
+        destroy_http_header(*headers, co);
+    }
+    
+    mm_free(co->mm, headers);
+}
+
+void free_http_data(struct core_object *co, struct http_header **headers, char *entity_body)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    free_all_headers(co, headers);
+    mm_free(co->mm, entity_body);
+}
+
 size_t strtosize_t(char * str) {
     size_t val;
     val = strtoul(str, NULL, BASE_10);
@@ -328,6 +348,7 @@ int create_dir(const char *save_dir)
 
 
 int http_time_now(char dst[HTTP_TIME_LEN]) {
+    memset(dst, 0, HTTP_TIME_LEN);
     time_t now = time(0);
     struct tm tm = *gmtime(&now);
     if (strftime(dst, HTTP_TIME_LEN, HTTP_TIME_FORMAT, &tm) == 0) {

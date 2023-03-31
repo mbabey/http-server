@@ -216,6 +216,12 @@ int setup_process_server(struct core_object *co, struct state_object *so)
         return -1;
     }
     
+    if (create_dir(WRITE_DIR) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    
     GOGO_PROCESS = 1;
     
     if (fork_child_processes(co, so) == -1)
@@ -577,12 +583,12 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     
     struct http_request request;
     memset(&request, 0, sizeof(struct http_request));
-
+    
     // TODO: reorganize this to be consistent with the request
-    size_t              status;
-    struct http_header  **headers;
-    char                *entity_body;
-
+    size_t             status;
+    struct http_header **headers;
+    char               *entity_body;
+    
     // TODO: handle this result
     int result = read_request(child->client_fd_local, &request, co);
     
@@ -593,6 +599,9 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     if (perform_method(co, so, &request, &status, &headers, &entity_body) == -1)
     {
         // if there is an error, should just set status to 500
+        status      = INTERNAL_SERVER_ERROR_500;
+        entity_body = NULL;
+        headers     = NULL;
     }
     
     // assemble and send http response
@@ -601,6 +610,9 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     {
         return -1;
     }
+
+    free_http_data(co, headers, entity_body);
+
     return 0;
 }
 
@@ -693,10 +705,5 @@ void destroy_process_state(struct core_object *co, struct state_object *so)
     } else if (so->child)
     {
         c_destroy_child_state(co, so, so->child);
-    }
-    
-    if (so->db)
-    {
-        dbm_close(so->db);
     }
 }

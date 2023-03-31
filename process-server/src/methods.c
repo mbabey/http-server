@@ -138,8 +138,8 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
                     size_t *status, struct http_header ***headers, char **entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
-    bool db          = false;
-    bool conditional = false;
+    bool               db          = false;
+    bool               conditional = false;
     struct http_header *database_header;
     
     database_header = get_header("database", request->extension_headers, request->num_extension_headers);
@@ -171,11 +171,11 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
 int fs_get(bool conditional, struct core_object *co, struct state_object *so, struct http_request *req,
            size_t *status, struct http_header ***headers, char **entity_body)
 {
-    char        pathname[BUFSIZ];
-    struct stat st;
+    char               pathname[BUFSIZ];
+    struct stat        st;
     struct http_header *h;
-    time_t f_last_modified, h_last_modified;
-    int    fd;
+    time_t             f_last_modified, h_last_modified;
+    int                fd;
     
     memset(pathname, 0, BUFSIZ);
     if (getcwd(pathname, BUFSIZ) == NULL)
@@ -299,12 +299,37 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     struct http_header *database_header;
     struct http_header *content_length_header;
     size_t             entity_body_size;
+    char               timestamp[HTTP_TIME_LEN];
+    size_t             timestamp_size;
+    uint8_t            *database_buffer;
+    size_t database_buffer_size;
     
     // Read headers to determine if database or file system
     database_header       = get_header("database", request->extension_headers, request->num_extension_headers);
-    content_length_header = get_header("content-length", request->request_headers, request->num_request_headers);
+    content_length_header = get_header(H_CONTENT_LENGTH, request->request_headers, request->num_request_headers);
     
     entity_body_size = strtol(content_length_header->value, NULL, 10);
+    
+    // Get the timestamp.
+    if (http_time_now(timestamp) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    timestamp_size = strlen(timestamp) + 1;
+    
+    // Create a buffer for the database value.
+    database_buffer_size = timestamp_size + entity_body_size + 1;
+    database_buffer = mm_malloc(database_buffer_size, co->mm);
+    if (!database_buffer)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    // Put the timestamp\0entitybody\0 into the buffer.
+    memcpy(database_buffer, timestamp, timestamp_size + 1);
+    memcpy(database_buffer + timestamp_size, *entity_body, entity_body_size);
+    *(database_buffer + database_buffer_size) = '\0'; // Place /0 at end.
     
     // Store with key as URI
     to_lower(database_header->value);
@@ -404,8 +429,8 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
     memset(entity_body_size, 0, CONTENT_LENGTH_MAX_DIGITS);
     sprintf(entity_body_size, "%lu", strlen(*entity_body));
     
-    content_type   = set_header(co, "content-type", "text/html");
-    content_length = set_header(co, "content-length", entity_body_size);
+    content_type   = set_header(co, H_CONTENT_TYPE, "text/html");
+    content_length = set_header(co, H_CONTENT_LENGTH, entity_body_size);
     
     offset = 0;
     *(*headers + offset++) = content_type;
