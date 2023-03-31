@@ -44,8 +44,8 @@ static int db_get(bool conditional, struct core_object *co, struct state_object 
  * @param headers pointer to the header list for the response
  * @return 0 on success, -1 and set err on failure
  */
-static int http_head(struct core_object *co, struct state_object *so, struct http_request *request, size_t *status,
-                     struct http_header ***headers);
+static int http_head(struct core_object *co, struct state_object *so, struct http_request *request,
+                    size_t *status, struct http_header ***headers, char **entity_body);
 
 /**
  * http_post
@@ -119,8 +119,7 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
         http_get(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, "HEAD") == 0)
     {
-        *entity_body = NULL;
-        http_head(co, so, request, status, headers);
+        http_head(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, "POST") == 0)
     {
         http_post(co, so, request, status, headers, entity_body);
@@ -236,26 +235,38 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         return -1;
     }
     
-    if (get_assemble_response_innards(st.st_size, co, req, headers, entity_body) == -1) {
-        return -1;
-    }
-    return 0;
+    return get_assemble_response_innards(st.st_size, co, req, headers, entity_body);
 }
 
 int db_get(bool conditional, struct core_object *co, struct state_object *so, struct http_request *req,
            size_t *status, struct http_header ***headers, char **entity_body)
 {
+    int res;
     char * path;
     char d_last_modified_str[HTTP_TIME_LEN];
     time_t d_last_modified;
     time_t h_last_modified;
     struct http_header * h;
-    datum data;
+    unsigned char * data;
+    char * value;
+    datum key;
 
     path = req->request_line->request_URI;
+    key.dptr = path;
+    key.dsize = strlen(path);
 
-    data = TODO;
-    d_last_modified_str = TODO;
+    res = safe_dbm_fetch(co, DB_NAME, co->so->db_sem, &key, &data);
+    if (res == -1) {
+        return -1;
+    } else if (res == 1) {
+        *status      = NOT_FOUND_404;
+        *headers     = NULL;
+        *entity_body = NULL;
+
+        return 0;
+    }
+    strcpy(d_last_modified_str, (char *)&data); // TODO: does this work???
+    value = (char *) strlen((char *)strlen((char *)&data) + 2);
 
     if (conditional)
     {
@@ -280,14 +291,27 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
         }
     }
 
+    *entity_body = mm_calloc(strlen(value), sizeof(char), co->mm);
+    if (!*entity_body) {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    strcpy(*entity_body, value);
+
+    return get_assemble_response_innards((off_t)strlen(value), co, req, headers, entity_body);
 }
 
-static int http_head(struct core_object *co, struct state_object *so, struct http_request *request, size_t *status,
-                     struct http_header ***headers)
+static int http_head(struct core_object *co, struct state_object *so, struct http_request *req,
+                     size_t *status, struct http_header ***headers, char **entity_body)
 {
-    PRINT_STACK_TRACE(co->tracer);
-    
-    return 0;
+    if (http_get(co, so, req, status, headers, entity_body) == -1) {
+        return -1;
+    }
+    if (mm_free(co->mm, *entity_body) == -1) {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    *entity_body = NULL;
 }
 
 static int http_post(struct core_object *co, struct state_object *so, struct http_request *request,
