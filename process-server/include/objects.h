@@ -71,6 +71,9 @@
 #define DB_NAME "db_http_2f6b08"              /** Database file name. */
 #define WRITE_DIR "dir_http_2f6b08"           /** Directory name. */
 
+#define DB_FLAGS O_RDWR | O_CREAT          /** Flags for opening db. */
+#define DB_FILE_MODE S_IRUSR | S_IWUSR     /** File mode for opening db. */
+
 #define FOR_EACH_CHILD_c_IN_CHILD_PIDS for (size_t c = 0; c < NUM_CHILD_PROCESSES; ++c) /** For each loop macro for looping over child processes. */
 #define FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS for (size_t p = 2; p < POLLFDS_SIZE; ++p)   /** For each loop macro for looping over socket pollfds. */
 

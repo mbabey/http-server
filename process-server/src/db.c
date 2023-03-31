@@ -1,4 +1,5 @@
 #include "../include/db.h"
+#include "../include/manager.h"
 #include "../include/util.h"
 
 #include <stdlib.h>
@@ -17,7 +18,7 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
         SET_ERROR(co->err);
         return -1;
     }
-    db = dbm_open(db_name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    db = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
     status = dbm_store(db, *key, *value, DBM_INSERT);
     if (db == (DBM *) 0)
     {
@@ -72,6 +73,31 @@ int safe_dbm_fetch(struct core_object *co, const char *db_name, sem_t *sem, datu
     dbm_close(db);
     // NOLINTEND(concurrency-mt-unsafe) : Protected
     sem_post(sem);
+    
+    return ret_val;
+}
+
+int copy_dptr_to_buffer(struct core_object *co, uint8_t **buffer, datum *value)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    int ret_val;
+    
+    if (value->dptr)
+    {
+        *buffer = mm_malloc(value->dsize, co->mm);
+        if (!*buffer)
+        {
+            SET_ERROR(co->err);
+            return -1;
+        }
+        memcpy(*buffer, value->dptr, value->dsize);
+        
+        ret_val = 0;
+    } else
+    {
+        ret_val = 1;
+    }
     
     return ret_val;
 }
