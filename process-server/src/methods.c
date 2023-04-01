@@ -65,6 +65,21 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
                      size_t *status, struct http_header ***headers, char **entity_body);
 
 /**
+ * store_in_db
+ * <p>
+ * Store a request body in the database with the key as the URI.
+ * </p>
+ * @param co the core object
+ * @param so the server object
+ * @param uri the request URI
+ * @param entity_body the entity body
+ * @param entity_body_size the size of the entity body
+ * @return 0 if the object was inserted, 1 if the object was updated, -1 and set err on failure.
+ */
+static int store_in_db(struct core_object *co, struct state_object *so, char *uri,
+                       char *const *entity_body, size_t entity_body_size);
+
+/**
  * store_in_fs
  * <p>
  * Store the entity body of a request in the file system at its request line.
@@ -103,7 +118,6 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
  */
 static int get_assemble_response_innards(off_t content_length, struct core_object *co, struct http_request *request,
                                          struct http_header ***headers, char **entity_body);
-
 
 int perform_method(struct core_object *co, struct state_object *so, struct http_request *request,
                    size_t *status, struct http_header ***headers, char **entity_body)
@@ -337,10 +351,6 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     struct http_header *database_header;
     struct http_header *content_length_header;
     size_t             entity_body_size;
-    char               timestamp[HTTP_TIME_LEN];
-    size_t             timestamp_size;
-    uint8_t            *database_buffer;
-    size_t             database_buffer_size;
     
     // Read headers to determine if database or file system
     database_header       = get_header("database", request->extension_headers, request->num_extension_headers);
@@ -352,42 +362,13 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
         printf("%s: %s\n", database_header->key, database_header->value);
     }
     
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Will never change
-    entity_body_size = strtol(content_length_header->value, NULL, 10);
-    
-    // Get the timestamp.
-    if (http_time_now(timestamp) == -1)
-    {
-        SET_ERROR(co->err);
-        return -1;
-    }
-    timestamp_size = strlen(timestamp) + 1;
-    
-    // Create a buffer for the database value.
-    database_buffer_size = timestamp_size + entity_body_size + 1;
-    database_buffer      = mm_malloc(database_buffer_size, co->mm);
-    if (!database_buffer)
-    {
-        SET_ERROR(co->err);
-        return -1;
-    }
-    // Put the timestamp\0entitybody\0 into the buffer.
-    memcpy(database_buffer, timestamp, timestamp_size);
-    memcpy(database_buffer + timestamp_size, *entity_body, entity_body_size);
-    *(database_buffer + database_buffer_size) = '\0'; // Place /0 at end.
-    
     // Store with key as URI
     if (database_header && strcmp(to_lower(database_header->value), "true") == 0)
     {
-        datum key;
-        datum value;
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Will never change
+        entity_body_size = strtol(content_length_header->value, NULL, 10);
+        overwrite_status = store_in_db(co, so, request->request_line->request_URI, entity_body, entity_body_size);
         
-        key.dptr    = request->request_line->request_URI;
-        key.dsize   = strlen(request->request_line->request_URI);
-        value.dptr  = *entity_body;
-        value.dsize = timestamp_size + entity_body_size;
-        
-        overwrite_status = db_upsert(co, DB_NAME, so->db_sem, &key, &value);
     } else
     {
         overwrite_status = store_in_fs(co, request);
@@ -421,6 +402,53 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     }
     
     return 0;
+}
+
+static int store_in_db(struct core_object *co, struct state_object *so, char *uri,
+                       char *const *entity_body, size_t entity_body_size)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    int     overwrite_status;
+    char    timestamp[HTTP_TIME_LEN];
+    size_t  timestamp_size;
+    uint8_t *database_buffer;
+    size_t  database_buffer_size;
+    datum   key;
+    datum   value;
+    
+    // Get the timestamp.
+    if (http_time_now(timestamp) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    timestamp_size = strlen(timestamp) + 1;
+    
+    // Create a buffer for the database value.
+    database_buffer_size = timestamp_size + entity_body_size + 1;
+    database_buffer      = mm_malloc(database_buffer_size, co->mm);
+    if (!database_buffer)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    
+    // Put the timestamp\0entitybody\0 into the buffer.
+    memcpy(database_buffer, timestamp, timestamp_size);
+    memcpy(database_buffer + timestamp_size, *entity_body, entity_body_size);
+    *(database_buffer + database_buffer_size) = '\0'; // Place /0 at end.
+    
+    key.dptr    = uri;
+    key.dsize   = strlen(uri);
+    value.dptr  = database_buffer;
+    value.dsize = database_buffer_size;
+    
+    overwrite_status = db_upsert(co, DB_NAME, so->db_sem, &key, &value);
+    
+    mm_free(co->mm, database_buffer);
+    
+    return overwrite_status;
 }
 
 static int store_in_fs(struct core_object *co, const struct http_request *request)
