@@ -580,38 +580,37 @@ static int c_receive_and_handle_messages(struct core_object *co, struct state_ob
 static int c_handle_http_request_response(struct core_object *co, struct state_object *so, struct child_struct *child)
 {
     PRINT_STACK_TRACE(co->tracer);
-    
-    struct http_request request;
-    memset(&request, 0, sizeof(struct http_request));
-    
-    // TODO: reorganize this to be consistent with the request
-    size_t             status;
-    struct http_header **headers;
-    char               *entity_body;
-    
-    // TODO: handle this result
-    int result = read_request(child->client_fd_local, &request, co);
-    
-    // TODO: handle some action dictated by the request
-    // function here should set variable status as a value of enum StatusCodes
-    // function here should create a list of headers in **headers
-    // function here should create or an entity body or assign NULL to *entity_body
-    if (perform_method(co, so, &request, &status, &headers, &entity_body) == -1)
+
+    size_t              status;
+    struct http_header  **headers;
+    char                *entity_body;
+    struct http_request *request;
+
+    request = init_http_request(co);
+    if (!request) {
+        return -1;
+    }
+
+    int result = read_request(child->client_fd_local, request, co);
+    if (result == -1) {
+        return -1;
+    }
+
+    if (perform_method(co, so, request, &status, &headers, &entity_body) == -1)
     {
         // if there is an error, should just set status to 500
         status      = INTERNAL_SERVER_ERROR_500;
         entity_body = NULL;
         headers     = NULL;
     }
-    
-    // assemble and send http response
-    // this function takes the status and makes an appropriate response
+
     if (assemble_send_response(co, child->client_fd_local, status, headers, entity_body) == -1)
     {
         return -1;
     }
 
     free_http_data(co, headers, entity_body);
+    destroy_http_request(&request, co);
 
     return 0;
 }

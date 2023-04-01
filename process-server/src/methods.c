@@ -111,7 +111,7 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     // tree on request line
     char *method;
-    
+
     method = request->request_line->method;
     
     if (strcmp(method, "GET") == 0)
@@ -140,10 +140,12 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
     bool               db          = false;
     bool               conditional = false;
     struct http_header *database_header;
-    
+
     database_header = get_header("database", request->extension_headers, request->num_extension_headers);
-    to_lower(database_header->value);
-    db          = strcmp(database_header->value, "true") == 0;
+    if (database_header) {
+        db = strcmp(database_header->value, "true") == 0;
+        to_lower(database_header->value);
+    }
     conditional = get_header(H_IF_MODIFIED_SINCE, request->request_headers, request->num_request_headers) != NULL;
     
     if (db)
@@ -183,8 +185,10 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         return -1;
     }
     strlcat(pathname, WRITE_DIR, BUFSIZ);
+    strlcat(pathname, "/", BUFSIZ);
     strlcat(pathname, req->request_line->request_URI, BUFSIZ);
-    
+
+
     // not found response
     if (stat(pathname, &st) == -1)
     {
@@ -194,7 +198,7 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         
         return 0;
     }
-    
+
     if (conditional)
     {
         h = get_header(H_IF_MODIFIED_SINCE, req->request_headers, req->num_request_headers);
@@ -247,7 +251,7 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
     time_t d_last_modified;
     time_t h_last_modified;
     struct http_header * h;
-    unsigned char * data;
+    char * data;
     char * value;
     datum key;
 
@@ -255,7 +259,7 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
     key.dptr = path;
     key.dsize = strlen(path);
 
-    res = safe_dbm_fetch(co, DB_NAME, co->so->db_sem, &key, &data);
+    res = safe_dbm_fetch(co, DB_NAME, co->so->db_sem, &key, (uint8_t **)&data);
     if (res == -1) {
         return -1;
     } else if (res == 1) {
@@ -265,8 +269,8 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
 
         return 0;
     }
-    strcpy(d_last_modified_str, (char *)&data); // TODO: does this work???
-    value = (char *) strlen((char *)strlen((char *)&data) + 2);
+    strcpy(d_last_modified_str, data);
+    value = data + strlen(data) + 2;
 
     if (conditional)
     {
@@ -312,6 +316,7 @@ static int http_head(struct core_object *co, struct state_object *so, struct htt
         return -1;
     }
     *entity_body = NULL;
+    return 0;
 }
 
 static int http_post(struct core_object *co, struct state_object *so, struct http_request *request,
