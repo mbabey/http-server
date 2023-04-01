@@ -44,8 +44,8 @@ static int db_get(bool conditional, struct core_object *co, struct state_object 
  * @param headers pointer to the header list for the response
  * @return 0 on success, -1 and set err on failure
  */
-static int http_head(struct core_object *co, struct state_object *so, struct http_request *request, size_t *status,
-                     struct http_header ***headers);
+static int http_head(struct core_object *co, struct state_object *so, struct http_request *request,
+                    size_t *status, struct http_header ***headers, char **entity_body);
 
 /**
  * http_post
@@ -89,6 +89,21 @@ static int store_in_fs(struct core_object *co, const struct http_request *reques
 static int post_assemble_response_innards(struct core_object *co, struct http_request *request,
                                           struct http_header ***headers, char **entity_body);
 
+/**
+ * get_assemble_response_innards
+ * <p>
+ * Assemble the innards of the Response to a GET Request.
+ * </p>
+ * @param co the core object
+ * @param request the request object
+ * @param headers pointer to the header list for the response
+ * @param entity_body pointer to the entity body for the response
+ * @return 0 on success, -1 on failure
+ */
+static int get_assemble_response_innards(off_t content_length, struct core_object *co, struct http_request *request,
+                                         struct http_header ***headers, char **entity_body);
+
+
 int perform_method(struct core_object *co, struct state_object *so, struct http_request *request,
                    size_t *status, struct http_header ***headers, char **entity_body)
 {
@@ -96,7 +111,7 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     // tree on request line
     char *method;
-    
+
     method = request->request_line->method;
     
     if (strcmp(method, "GET") == 0)
@@ -104,8 +119,7 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
         http_get(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, "HEAD") == 0)
     {
-        *entity_body = NULL;
-        http_head(co, so, request, status, headers);
+        http_head(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, "POST") == 0)
     {
         http_post(co, so, request, status, headers, entity_body);
@@ -126,10 +140,12 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
     bool               db          = false;
     bool               conditional = false;
     struct http_header *database_header;
-    
+
     database_header = get_header("database", request->extension_headers, request->num_extension_headers);
-    to_lower(database_header->value);
-    db          = strcmp(database_header->value, "true") == 0;
+    if (database_header) {
+        db = strcmp(database_header->value, "true") == 0;
+        to_lower(database_header->value);
+    }
     conditional = get_header(H_IF_MODIFIED_SINCE, request->request_headers, request->num_request_headers) != NULL;
     
     if (db)
@@ -162,13 +178,6 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
     time_t             f_last_modified, h_last_modified;
     int                fd;
     
-    h = get_header(H_IF_MODIFIED_SINCE, req->request_headers, req->num_request_headers);
-    if (!h)
-    {
-        (void) fprintf(stderr, "if-modified-since header not found in request\n");
-        return -1;
-    }
-    
     memset(pathname, 0, BUFSIZ);
     if (getcwd(pathname, BUFSIZ) == NULL)
     {
@@ -176,8 +185,10 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         return -1;
     }
     strlcat(pathname, WRITE_DIR, BUFSIZ);
+    strlcat(pathname, "/", BUFSIZ);
     strlcat(pathname, req->request_line->request_URI, BUFSIZ);
-    
+
+
     // not found response
     if (stat(pathname, &st) == -1)
     {
@@ -187,9 +198,15 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         
         return 0;
     }
-    
+
     if (conditional)
     {
+        h = get_header(H_IF_MODIFIED_SINCE, req->request_headers, req->num_request_headers);
+        if (!h)
+        {
+            (void) fprintf(stderr, "if-modified-since header not found in request\n");
+            return -1;
+        }
         f_last_modified = st.st_mtimespec.tv_sec;
         h_last_modified = http_time_to_time_t(h->value);
         if (h_last_modified == -1)
@@ -222,21 +239,83 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         return -1;
     }
     
-    // TODO: assemble 200 response innards
-    return 0;
+    return get_assemble_response_innards(st.st_size, co, req, headers, entity_body);
 }
 
-int db_get(bool conditional, struct core_object *co, struct state_object *so, struct http_request *request,
+int db_get(bool conditional, struct core_object *co, struct state_object *so, struct http_request *req,
            size_t *status, struct http_header ***headers, char **entity_body)
 {
-    //TODO: this entire function
+    int res;
+    char * path;
+    char d_last_modified_str[HTTP_TIME_LEN];
+    time_t d_last_modified;
+    time_t h_last_modified;
+    struct http_header * h;
+    char * data;
+    char * value;
+    datum key;
+
+    path = req->request_line->request_URI;
+    key.dptr = path;
+    key.dsize = strlen(path);
+
+    res = safe_dbm_fetch(co, DB_NAME, co->so->db_sem, &key, (uint8_t **)&data);
+    if (res == -1) {
+        return -1;
+    } else if (res == 1) {
+        *status      = NOT_FOUND_404;
+        *headers     = NULL;
+        *entity_body = NULL;
+
+        return 0;
+    }
+    strcpy(d_last_modified_str, data);
+    value = data + strlen(data) + 2;
+
+    if (conditional)
+    {
+        h = get_header(H_IF_MODIFIED_SINCE, req->request_headers, req->num_request_headers);
+        if (!h)
+        {
+            (void) fprintf(stderr, "if-modified-since header not found in request\n");
+            return -1;
+        }
+        d_last_modified = http_time_to_time_t(d_last_modified_str);
+        h_last_modified = http_time_to_time_t(h->value);
+        if (h_last_modified == -1)
+        {
+            return -1;
+        }
+        if (difftime(d_last_modified, h_last_modified) < 0)
+        {
+            *status      = NOT_MODIFIED_304;
+            *headers     = NULL;
+            *entity_body = NULL;
+            return 0;
+        }
+    }
+
+    *entity_body = mm_calloc(strlen(value), sizeof(char), co->mm);
+    if (!*entity_body) {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    strcpy(*entity_body, value);
+
+    return get_assemble_response_innards((off_t)strlen(value), co, req, headers, entity_body);
 }
 
-static int http_head(struct core_object *co, struct state_object *so, struct http_request *request, size_t *status,
-                     struct http_header ***headers)
+static int http_head(struct core_object *co, struct state_object *so, struct http_request *req,
+                     size_t *status, struct http_header ***headers, char **entity_body)
 {
-    PRINT_STACK_TRACE(co->tracer);
-    
+    if (http_get(co, so, req, status, headers, entity_body) == -1) {
+        return -1;
+    }
+    if (mm_free(co->mm, *entity_body) == -1) {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    *entity_body = NULL;
     return 0;
 }
 
@@ -387,5 +466,37 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
     *(*headers + offset++) = content_length;
     *(*headers + offset)   = NULL;
     
+    return 0;
+}
+
+static int get_assemble_response_innards(off_t content_length, struct core_object *co, struct http_request *request,
+                                          struct http_header ***headers, char **entity_body)
+{
+    const int num_headers = 2;
+    struct http_header * h_content_type;
+    struct http_header * h_content_length;
+    char content_length_str[H_CONTENT_LENGTH_LENGTH];
+
+    h_content_type = set_header(co, H_CONTENT_TYPE, TEXT_HTML_CONTENT_TYPE);
+    if (!h_content_type) {
+        return -1;
+    }
+
+    sprintf(content_length_str, "%lld", content_length);
+    h_content_length = set_header(co, H_CONTENT_TYPE,content_length_str);
+    if (!h_content_length) {
+        return -1;
+    }
+
+    *headers = mm_calloc(num_headers + 1, sizeof(struct http_header), co->mm);
+    if (!*headers) {
+        SET_ERROR(co->err);
+        return -1;
+    }
+
+    (*headers)[0] = h_content_length;
+    (*headers)[1] = h_content_type;
+    (*headers)[2] = NULL;
+
     return 0;
 }

@@ -24,7 +24,7 @@
 #define H_AUTHORIZATION "authorization"
 #define H_CONTENT_ENCODING "content-encoding"
 #define H_CONTENT_LENGTH "content-length"
-#define H_CONTENT_LENGTH_LENGTH 11
+#define H_CONTENT_LENGTH_LENGTH 12
 #define H_CONTENT_TYPE "content-type"
 #define H_DATE "date"
 #define H_EXPIRES "expires"
@@ -54,6 +54,11 @@
 #define SP_SIZE 1       /** Number of bytes for SP. */
 #define CRLF_SIZE 2     /** Number of bytes for CRLF. */
 #define COLON_SP_SIZE 2 /** Number of bytes for ": " */
+
+/**
+ * Misc
+ */
+#define TEXT_HTML_CONTENT_TYPE "text/html"
 
 #define NUM_CHILD_PROCESSES 8             /** The number of worker processes to be spawned to handle network requests. */
 #define CONNECTION_QUEUE 100              /** The number of connections that can be queued on the listening socket. */
