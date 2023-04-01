@@ -46,7 +46,7 @@ static int db_get(bool conditional, struct core_object *co, struct state_object 
  * @return 0 on success, -1 and set err on failure
  */
 static int http_head(struct core_object *co, struct state_object *so, struct http_request *request,
-                    size_t *status, struct http_header ***headers, char **entity_body);
+                     size_t *status, struct http_header ***headers, char **entity_body);
 
 /**
  * http_post
@@ -112,7 +112,7 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     // tree on request line
     char *method;
-
+    
     method = request->request_line->method;
     
     if (strcmp(method, M_GET) == 0)
@@ -141,13 +141,14 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
     bool               db          = false;
     bool               conditional = false;
     struct http_header *database_header;
-
+    
     database_header = get_header("database", request->extension_headers, request->num_extension_headers);
-    if (database_header) {
+    if (database_header)
+    {
         db = strcmp(database_header->value, "true") == 0;
         to_lower(database_header->value);
     }
-    conditional = get_header(H_IF_MODIFIED_SINCE, request->request_headers, request->num_request_headers) != NULL;
+    conditional     = get_header(H_IF_MODIFIED_SINCE, request->request_headers, request->num_request_headers) != NULL;
     
     if (db)
     {
@@ -189,8 +190,8 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
     strlcat(pathname, WRITE_DIR, BUFSIZ);
     strlcat(pathname, "/", BUFSIZ);
     strlcat(pathname, req->request_line->request_URI, BUFSIZ);
-
-
+    
+    
     // not found response
     if (stat(pathname, &st) == -1)
     {
@@ -200,7 +201,7 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         
         return 0;
     }
-
+    
     if (conditional)
     {
         h = get_header(H_IF_MODIFIED_SINCE, req->request_headers, req->num_request_headers);
@@ -247,34 +248,36 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
 int db_get(bool conditional, struct core_object *co, struct state_object *so, struct http_request *req,
            size_t *status, struct http_header ***headers, char **entity_body)
 {
-    int res;
-    char * path;
-    char d_last_modified_str[HTTP_TIME_LEN];
-    time_t d_last_modified;
-    time_t h_last_modified;
-    struct http_header * h;
-    char * data;
-    char * value;
-    datum key;
-
+    int                res;
+    char               *path;
+    char               d_last_modified_str[HTTP_TIME_LEN];
+    time_t             d_last_modified;
+    time_t             h_last_modified;
+    struct http_header *h;
+    char               *data;
+    char               *value;
+    datum              key;
+    
     path = req->request_line->request_URI;
-    key.dptr = path;
+    key.dptr  = path;
     key.dsize = strlen(path);
-
-    res = safe_dbm_fetch(co, DB_NAME, co->so->db_sem, &key, (uint8_t **)&data);
-    if (res == -1) {
+    
+    res = safe_dbm_fetch(co, DB_NAME, co->so->db_sem, &key, (uint8_t **) &data);
+    if (res == -1)
+    {
         return -1;
     }
-    if (res == 1) {
+    if (res == 1)
+    {
         *status      = NOT_FOUND_404;
         *headers     = NULL;
         *entity_body = NULL;
-
+        
         return 0;
     }
     strcpy(d_last_modified_str, data);
     value = data + strlen(data) + 2;
-
+    
     if (conditional)
     {
         h = get_header(H_IF_MODIFIED_SINCE, req->request_headers, req->num_request_headers);
@@ -297,24 +300,27 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
             return 0;
         }
     }
-
+    
     *entity_body = mm_calloc(strlen(value), sizeof(char), co->mm);
-    if (!*entity_body) {
+    if (!*entity_body)
+    {
         SET_ERROR(co->err);
         return -1;
     }
     strcpy(*entity_body, value);
-
-    return get_assemble_response_innards((off_t)strlen(value), co, req, headers, entity_body);
+    
+    return get_assemble_response_innards((off_t) strlen(value), co, req, headers, entity_body);
 }
 
 static int http_head(struct core_object *co, struct state_object *so, struct http_request *req,
                      size_t *status, struct http_header ***headers, char **entity_body)
 {
-    if (http_get(co, so, req, status, headers, entity_body) == -1) {
+    if (http_get(co, so, req, status, headers, entity_body) == -1)
+    {
         return -1;
     }
-    if (mm_free(co->mm, *entity_body) == -1) {
+    if (mm_free(co->mm, *entity_body) == -1)
+    {
         SET_ERROR(co->err);
         return -1;
     }
@@ -337,8 +343,30 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     size_t             database_buffer_size;
     
     // Read headers to determine if database or file system
-    database_header       = get_header("database", request->extension_headers, request->num_extension_headers);
-    content_length_header = get_header(H_CONTENT_LENGTH, request->request_headers, request->num_request_headers);
+    database_header = get_header("database", request->general_headers, request->num_general_headers);
+    if (!database_header)
+    {
+        database_header = get_header("database", request->entity_headers, request->num_entity_headers);
+        printf("database in entity\n");
+    }
+    if (!database_header)
+    {
+        database_header = get_header("database", request->request_headers, request->num_request_headers);
+        printf("database in request\n");
+    }
+    if (!database_header)
+    {
+        database_header = get_header("database", request->extension_headers, request->num_extension_headers);
+        printf("database in extension\n");
+    }
+    if (!database_header)
+    {
+        printf("database in none!\n");
+    }
+    content_length_header = get_header(H_CONTENT_LENGTH, request->entity_headers, request->num_entity_headers);
+    
+    printf("%s: %s\n", content_length_header->key, content_length_header->value);
+    printf("%s: %s\n", database_header->key, database_header->value);
     
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Will never change
     entity_body_size = strtol(content_length_header->value, NULL, 10);
@@ -366,7 +394,7 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     
     // Store with key as URI
     to_lower(database_header->value);
-    if (strcmp(database_header->value, "true") == 0)
+    if (strcmp(, "true") == 0)
     {
         datum key;
         datum value;
@@ -481,40 +509,43 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
 }
 
 static int get_assemble_response_innards(off_t content_length, struct core_object *co, struct http_request *request,
-                                          struct http_header ***headers, char **entity_body)
+                                         struct http_header ***headers, char **entity_body)
 {
-    const int num_headers = 2;
-    struct http_header * h_content_type;
-    struct http_header * h_content_length;
-    char content_length_str[H_CONTENT_LENGTH_LENGTH];
-
+    const int          num_headers = 2;
+    struct http_header *h_content_type;
+    struct http_header *h_content_length;
+    char               content_length_str[H_CONTENT_LENGTH_LENGTH];
+    
     h_content_type = set_header(co, H_CONTENT_TYPE, TEXT_HTML_CONTENT_TYPE);
-    if (!h_content_type) {
+    if (!h_content_type)
+    {
         return -1;
     }
-
+    
     if (sprintf(content_length_str, "%lld", content_length) < 0)
     {
         destroy_http_header(h_content_type, co);
         return -1;
     }
-    h_content_length = set_header(co, H_CONTENT_TYPE,content_length_str);
-    if (!h_content_length) {
+    h_content_length = set_header(co, H_CONTENT_TYPE, content_length_str);
+    if (!h_content_length)
+    {
         destroy_http_header(h_content_type, co);
         return -1;
     }
-
+    
     *headers = mm_calloc(num_headers + 1, sizeof(struct http_header), co->mm);
-    if (!*headers) {
+    if (!*headers)
+    {
         destroy_http_header(h_content_type, co);
         destroy_http_header(h_content_type, co);
         SET_ERROR(co->err);
         return -1;
     }
-
+    
     (*headers)[0] = h_content_length;
     (*headers)[1] = h_content_type;
     (*headers)[2] = NULL;
-
+    
     return 0;
 }

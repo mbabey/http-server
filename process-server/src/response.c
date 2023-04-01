@@ -49,6 +49,16 @@
 static void assemble_status_line(struct core_object *co, struct http_response *response, size_t status);
 
 /**
+ * print_response
+ * <p>
+ * Print the HTTP response.
+ * </p>
+ * @param co the core object
+ * @param response the response
+ */
+void print_response(struct core_object *co, struct http_response *response);
+
+/**
  * serialize_http_response
  * <p>
  * Serialize an HTTP Response object into a byte sequence.
@@ -213,8 +223,6 @@ static void assemble_status_line(struct core_object *co, struct http_response *r
         }
     }
 }
-
-void print_response(struct core_object *co, struct http_response *response);
 
 static size_t serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *response)
 {

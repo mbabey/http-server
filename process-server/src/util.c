@@ -149,6 +149,10 @@ void to_lower(char *s)
 
 struct http_header *get_header(const char *key, struct http_header **headers, const size_t num_headers)
 {
+    if (!headers)
+    {
+        return NULL;
+    }
     for (size_t i = 0; i < num_headers; i++)
     {
         if (strcmp(key, headers[i]->key) == 0)
