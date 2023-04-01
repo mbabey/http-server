@@ -343,30 +343,14 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     size_t             database_buffer_size;
     
     // Read headers to determine if database or file system
-    database_header = get_header("database", request->general_headers, request->num_general_headers);
-    if (!database_header)
-    {
-        database_header = get_header("database", request->entity_headers, request->num_entity_headers);
-        printf("database in entity\n");
-    }
-    if (!database_header)
-    {
-        database_header = get_header("database", request->request_headers, request->num_request_headers);
-        printf("database in request\n");
-    }
-    if (!database_header)
-    {
-        database_header = get_header("database", request->extension_headers, request->num_extension_headers);
-        printf("database in extension\n");
-    }
-    if (!database_header)
-    {
-        printf("database in none!\n");
-    }
+    database_header       = get_header("database", request->extension_headers, request->num_extension_headers);
     content_length_header = get_header(H_CONTENT_LENGTH, request->entity_headers, request->num_entity_headers);
     
     printf("%s: %s\n", content_length_header->key, content_length_header->value);
-    printf("%s: %s\n", database_header->key, database_header->value);
+    if (database_header)
+    {
+        printf("%s: %s\n", database_header->key, database_header->value);
+    }
     
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Will never change
     entity_body_size = strtol(content_length_header->value, NULL, 10);
@@ -388,13 +372,12 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
         return -1;
     }
     // Put the timestamp\0entitybody\0 into the buffer.
-    memcpy(database_buffer, timestamp, timestamp_size + 1);
+    memcpy(database_buffer, timestamp, timestamp_size);
     memcpy(database_buffer + timestamp_size, *entity_body, entity_body_size);
     *(database_buffer + database_buffer_size) = '\0'; // Place /0 at end.
     
     // Store with key as URI
-    to_lower(database_header->value);
-    if (strcmp(, "true") == 0)
+    if (database_header && strcmp(to_lower(database_header->value), "true") == 0)
     {
         datum key;
         datum value;

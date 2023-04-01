@@ -139,13 +139,13 @@ char *rl_litlittok(char *str, char *sep)
     return temp;
 }
 
-void to_lower(char *s)
+char * to_lower(char *s)
 {
     for (int i = 0; s[i]; i++)
     {
         s[i] = (char) tolower(s[i]);
     }
-    
+    return s;
 }
 
 struct http_header *get_header(const char *key, struct http_header **headers, const size_t num_headers)

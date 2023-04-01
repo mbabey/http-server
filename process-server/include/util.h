@@ -73,8 +73,9 @@ char * rl_litlittok(char * str, char * sep);
  * Transforms a string to lowercase.
  * </p>
  * @param s the string to transform.
+ * @return the string in lowercase
  */
-void to_lower(char * s);
+char * to_lower(char * s);
 
 /**
  * get_header
