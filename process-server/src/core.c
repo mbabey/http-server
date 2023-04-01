@@ -196,7 +196,8 @@ static int validate_port(in_port_t *port_num, const char *port_num_str, TRACER_F
     PRINT_STACK_TRACE(tracer);
     if (!port_num_str)
     {
-        return -1;
+        *port_num = (in_port_t) HTTP_PORT;
+        return 0;
     }
     
     long parsed_port_num;
