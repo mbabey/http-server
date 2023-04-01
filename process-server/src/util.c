@@ -145,6 +145,7 @@ void to_lower(char *s)
     {
         s[i] = (char) tolower(s[i]);
     }
+    
 }
 
 struct http_header *get_header(const char *key, struct http_header **headers, const size_t num_headers)
