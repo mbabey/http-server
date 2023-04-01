@@ -246,10 +246,10 @@ time_t http_time_to_time_t(char http_time[HTTP_TIME_LEN]);
  * <p>
  * Compares two HTTP 1.0 times.
  * </p>
- * @param time_1 the first time to compare.
- * @param time_2 the second time to compare.
- * @return 1 if time_1 > time_2, and 0 if time_2 > time_1. -1 on error.
+ * @param time1_str the first time to compare.
+ * @param time2_str the second time to compare.
+ * @return 1 if time1_str > time2_str, and 0 if time2_str > time1_str. -1 on error.
  */
-int compare_http_time(char time_1[HTTP_TIME_LEN], char time_2[HTTP_TIME_LEN]);
+int compare_http_time(char time1_str[HTTP_TIME_LEN], char time2_str[HTTP_TIME_LEN]);
 
 #endif //POLL_SERVER_UTIL_H

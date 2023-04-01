@@ -9,7 +9,8 @@
  * Upsert into the database.
  * </p>
  * @param co the core object
- * @param so the state object
+ * @param db_name the name of the database into which to upsert
+ * @param sem the semaphore for the database
  * @param key the key to upsert
  * @param value the value to upsert
  * @return 0 on success and no overwrite, 1 on success and overwrite, -1 and set err on failure
@@ -61,7 +62,7 @@ int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
  * <p>
  * Print an error message based on the error code of passed.
  * </p>
- * @param err_code the error code
+ * @param db the db from which to print an error
  */
 void print_db_error(DBM *db);
 

@@ -1,10 +1,7 @@
+#include <manager.h>
 #include <read.h>
-
 #include <request.h>
 #include <util.h>
-#include <manager.h>
-
-#include <stdlib.h>
 
 /**
  * Read states
@@ -97,6 +94,7 @@ int read_request(int fd, struct http_request * req, struct core_object * co) {
 
 static int read_headers(int fd, struct http_request * req, struct core_object * co) {
     bool request_line = true;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): size static
     char until[5] = {CR, LF, CR, LF, TERM};
     char sep[3] = {CR, LF, TERM};
     char * tok;

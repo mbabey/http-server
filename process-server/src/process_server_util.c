@@ -1,6 +1,6 @@
-#include "../include/process_server_util.h"
-#include "../include/manager.h"
 #include "../include/db.h"
+#include "../include/manager.h"
+#include "../include/process_server_util.h"
 
 #include <request.h>
 
