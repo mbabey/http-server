@@ -214,14 +214,15 @@ static size_t serialize_http_response(struct core_object *co, char **dst_buffer,
     size_t headers_size_bytes;
     size_t serial_response_size;
     
-    headers_size_bytes   = get_header_size_bytes(response.headers, co->tracer);
-    serial_response_size = STATUS_LINE_SIZE(response.status_line) + CRLF_SIZE
+    headers_size_bytes   = get_header_size_bytes(response->headers, co->tracer);
+    serial_response_size = STATUS_LINE_SIZE(response->status_line) + CRLF_SIZE
                            + headers_size_bytes // Includes CRLF_SIZE
                            + CRLF_SIZE
-                           + ((response.entity_body) ? strlen(response.entity_body) : 0);
+                           + ((response->entity_body) ? strlen(response->entity_body) : 0);
     
     print_response(co, response);
     
+    printf("%lu\n", serial_response_size);
     *dst_buffer = mm_malloc(serial_response_size, co->mm);
     if (!*dst_buffer)
     {
@@ -236,41 +237,57 @@ static size_t serialize_http_response(struct core_object *co, char **dst_buffer,
     
     // Serialize the status line. strcpy to avoid copying null byte.
     // Format: HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-    strcpy((*dst_buffer + byte_offset), response->status_line.version);
+    strlcpy((*dst_buffer + byte_offset), response->status_line.version,
+            strlen(response->status_line.version));
     byte_offset += strlen(response->status_line.version);
-    strcpy((*dst_buffer + byte_offset), SP_STR);
+    
+    strlcpy((*dst_buffer + byte_offset), SP_STR, SP_SIZE);
     byte_offset += SP_SIZE;
-    strcpy((*dst_buffer + byte_offset), response->status_line.status_code);
+    
+    strlcpy((*dst_buffer + byte_offset), response->status_line.status_code,
+            strlen(response->status_line.status_code));
     byte_offset += strlen(response->status_line.status_code);
-    strcpy((*dst_buffer + byte_offset), SP_STR);
+    
+    strlcpy((*dst_buffer + byte_offset), SP_STR, SP_SIZE);
     byte_offset += SP_SIZE;
-    strcpy((*dst_buffer + byte_offset), response->status_line.reason_phrase);
+    
+    strlcpy((*dst_buffer + byte_offset), response->status_line.reason_phrase,
+            strlen(response->status_line.reason_phrase));
     byte_offset += strlen(response->status_line.reason_phrase);
-    strcpy((*dst_buffer + byte_offset), CRLF_STR);
+    
+    printf("%lu\n", byte_offset);
+    strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE);
     byte_offset += CRLF_SIZE;
+    printf("%lu\n", byte_offset);
     
     // Serialize the headers.
     // Format: field-name ":" [ field-value ] CRLF
-    headers = response->headers;
-    if (headers)
+    if (response->headers)
     {
-        for (; *headers; ++headers)
+        for (headers = response->headers; *headers; ++headers)
         {
-            strcpy((*dst_buffer + byte_offset), (*headers)->key);
+            strlcpy((*dst_buffer + byte_offset), (*headers)->key, strlen((*headers)->key));
             byte_offset += strlen((*headers)->key);
-            strcpy((*dst_buffer + byte_offset), COLON_SP_STR);
+            
+            printf("%lu\n", byte_offset);
+            strlcpy((*dst_buffer + byte_offset), COLON_SP_STR, COLON_SP_SIZE);
             byte_offset += COLON_SP_SIZE;
-            strcpy((*dst_buffer + byte_offset), (*headers)->value);
+            
+            printf("%lu\n", byte_offset);
+            strlcpy((*dst_buffer + byte_offset), (*headers)->value, strlen((*headers)->value));
             byte_offset += strlen((*headers)->value);
-            strcpy((*dst_buffer + byte_offset), CRLF_STR);
+            
+            printf("%lu\n", byte_offset);
+            strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE);
             byte_offset += CRLF_SIZE;
+            printf("%lu\n", byte_offset);
         }
     }
-    
-    strcpy((*dst_buffer + byte_offset), CRLF_STR);
+    printf("%lu\n", byte_offset);
+    strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE);
     byte_offset += CRLF_SIZE;
     
-    strcpy((*dst_buffer + byte_offset), response->entity_body);
+    strlcpy((*dst_buffer + byte_offset), response->entity_body);
     
     return serial_response_size;
 }
