@@ -287,7 +287,11 @@ static size_t serialize_http_response(struct core_object *co, char **dst_buffer,
     strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE);
     byte_offset += CRLF_SIZE;
     
-    strlcpy((*dst_buffer + byte_offset), response->entity_body);
+    if (response->entity_body)
+    {
+        strlcpy((*dst_buffer + byte_offset), response->entity_body,
+                strlen(response->entity_body));
+    }
     
     return serial_response_size;
 }
