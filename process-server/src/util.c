@@ -1,4 +1,4 @@
-#include <util.h>
+#include "../include/manager.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -6,10 +6,11 @@
 #include <string.h>
 #include <sys/fcntl.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <time.h>
-#include "manager.h"
+#include <unistd.h>
+#include <util.h>
 
+// NOLINTNEXTLINE(modernize-macro-to-enum) : Macro is fine.
 #define BASE_10 10
 #define HTTP_TIME_FORMAT "%a, %d %b %Y %H:%M:%S %Z"
 
@@ -51,90 +52,107 @@ int read_fully(int fd, void *data, size_t size)
     return 0;
 }
 
-char * litlittok(char * str, char * sep) {
+char *litlittok(char *str, char *sep)
+{
     // shameless copy of https://stackoverflow.com/questions/59770865/strtok-c-multiple-chars-as-one-delimiter
-    static char *string;
-    if (str != NULL) {
+    static char *string; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables): must change
+    if (str != NULL)
+    {
         string = str;
     }
-
-    if (string == NULL) {
+    
+    if (string == NULL)
+    {
         return string;
     }
-
+    
     char *end = strstr(string, sep);
-    if (end == NULL) {
+    if (end == NULL)
+    {
         char *temp = string;
         string = NULL;
         return temp;
     }
-
+    
     char *temp = string;
-
+    
     *end = '\0';
     string = end + strlen(sep);
     return temp;
 }
 
-char * h_litlittok(char * str, char * sep) {
+char *h_litlittok(char *str, char *sep)
+{
     // shameless copy of https://stackoverflow.com/questions/59770865/strtok-c-multiple-chars-as-one-delimiter
-    static char *string;
-    if (str != NULL) {
+    static char *string; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables): must change
+    if (str != NULL)
+    {
         string = str;
     }
-
-    if (string == NULL) {
+    
+    if (string == NULL)
+    {
         return string;
     }
-
+    
     char *end = strstr(string, sep);
-    if (end == NULL) {
+    if (end == NULL)
+    {
         char *temp = string;
         string = NULL;
         return temp;
     }
-
+    
     char *temp = string;
-
+    
     *end = '\0';
     string = end + strlen(sep);
     return temp;
 }
 
-char * rl_litlittok(char * str, char * sep) {
+char *rl_litlittok(char *str, char *sep)
+{
     // shameless copy of https://stackoverflow.com/questions/59770865/strtok-c-multiple-chars-as-one-delimiter
-    static char *string;
-    if (str != NULL) {
+    static char *string; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables): must change
+    if (str != NULL)
+    {
         string = str;
     }
-
-    if (string == NULL) {
+    
+    if (string == NULL)
+    {
         return string;
     }
-
+    
     char *end = strstr(string, sep);
-    if (end == NULL) {
+    if (end == NULL)
+    {
         char *temp = string;
         string = NULL;
         return temp;
     }
-
+    
     char *temp = string;
-
+    
     *end = '\0';
     string = end + strlen(sep);
     return temp;
 }
 
-void to_lower(char * s) {
-    for(int i = 0; s[i]; i++){
-        s[i] = (char)tolower(s[i]);
+void to_lower(char *s)
+{
+    for (int i = 0; s[i]; i++)
+    {
+        s[i] = (char) tolower(s[i]);
     }
 }
 
-struct http_header * get_header(const char * key, struct http_header ** headers, const size_t num_headers) {
-    for (size_t i = 0; i < num_headers; i++) {
-        if(strcmp(key, headers[i]->key) == 0) {
+struct http_header *get_header(const char *key, struct http_header **headers, const size_t num_headers)
+{
+    for (size_t i = 0; i < num_headers; i++)
+    {
+        if (strcmp(key, headers[i]->key) == 0)
+        {
             return headers[i];
         }
     }
@@ -154,7 +172,7 @@ struct http_header *set_header(struct core_object *co, const char *key, const ch
         return NULL;
     }
     
-    header->key = mm_strdup(key, co->mm);
+    header->key   = mm_strdup(key, co->mm);
     header->value = mm_strdup(value, co->mm);
     if (!header->key || !header->value)
     {
@@ -165,11 +183,14 @@ struct http_header *set_header(struct core_object *co, const char *key, const ch
     return header;
 }
 
-void destroy_http_header(struct http_header * header, struct core_object * co) {
-    if (header->key) {
+void destroy_http_header(struct http_header *header, struct core_object *co)
+{
+    if (header->key)
+    {
         mm_free(co->mm, header->key);
     }
-    if (header->value) {
+    if (header->value)
+    {
         mm_free(co->mm, header->value);
     }
     mm_free(co->mm, header);
@@ -195,33 +216,42 @@ void free_http_data(struct core_object *co, struct http_header **headers, char *
     mm_free(co->mm, entity_body);
 }
 
-size_t strtosize_t(char * str) {
+size_t strtosize_t(char *str)
+{
     size_t val;
     val = strtoul(str, NULL, BASE_10);
-    if (val == 0) {
+    if (val == 0)
+    {
         perror("strtoul parsing string");
         return 0;
     }
     return val;
 }
 
-char * trim_whitespace(char * str) {
+char *trim_whitespace(char *str)
+{
     size_t size;
-    char *end;
-
+    char   *end;
+    
     size = strlen(str);
-
+    
     if (!size)
+    {
         return str;
-
+    }
+    
     end = str + size - 1;
     while (end >= str && isspace(*end))
+    {
         end--;
+    }
     *(end + 1) = '\0';
-
+    
     while (*str && isspace(*str))
+    {
         str++;
-
+    }
+    
     return str;
 }
 
@@ -264,7 +294,11 @@ char *prepend_string(char **str, const char *prefix)
     
     strcat(new_str, prefix);
     strcat(new_str, *str);
-    set_string(str, new_str);
+    if (set_string(str, new_str) == NULL)
+    {
+        free(new_str);
+        return NULL;
+    }
     
     free(new_str);
     
@@ -287,6 +321,7 @@ char *append_string(char **str, const char *suffix)
     strcat(new_str, suffix);
     if (set_string(str, new_str) == NULL)
     {
+        free(new_str);
         return NULL;
     }
     
@@ -295,8 +330,8 @@ char *append_string(char **str, const char *suffix)
     return *str;
 }
 
-char * create_dir_str(char **save_dir, const char *wr_dir,
-                      const char *client_addr_str) // NOLINT(bugprone-easily-swappable-parameters)
+char *create_dir_str(char **save_dir, const char *wr_dir,
+                     const char *client_addr_str) // NOLINT(bugprone-easily-swappable-parameters)
 {
     if (set_string(save_dir, wr_dir) == NULL)
     {
@@ -319,7 +354,7 @@ int create_dir(const char *save_dir)
     char   *path;
     size_t len;
     
-    len       = strlen(save_dir);
+    len  = strlen(save_dir);
     path = (char *) calloc(len + 1, sizeof(char));
     if (path == NULL)
     {
@@ -335,6 +370,7 @@ int create_dir(const char *save_dir)
             {
                 if ((mkdir(path, WR_DIR_FLAGS)) == -1)
                 {
+                    free(path);
                     return -1;
                 }
             }
@@ -347,49 +383,59 @@ int create_dir(const char *save_dir)
 }
 
 
-int http_time_now(char dst[HTTP_TIME_LEN]) {
+int http_time_now(char dst[HTTP_TIME_LEN])
+{
     memset(dst, 0, HTTP_TIME_LEN);
-    time_t now = time(0);
-    struct tm tm = *gmtime(&now);
-    if (strftime(dst, HTTP_TIME_LEN, HTTP_TIME_FORMAT, &tm) == 0) {
+    time_t    now = time(0);
+    struct tm tm  = *gmtime(&now); // NOLINT(concurrency-mt-unsafe): No threads here
+    if (strftime(dst, HTTP_TIME_LEN, HTTP_TIME_FORMAT, &tm) == 0)
+    {
         (void) fprintf(stderr, "error getting current HTTP time\n");
         return -1;
     }
     return 0;
 }
 
-time_t http_time_to_time_t(char http_time[HTTP_TIME_LEN]) {
+time_t http_time_to_time_t(char http_time[HTTP_TIME_LEN])
+{
     struct tm tm;
-    time_t t;
-
-    if (strptime(http_time, HTTP_TIME_FORMAT, &tm) == NULL) {
+    time_t    t;
+    
+    if (strptime(http_time, HTTP_TIME_FORMAT, &tm) == NULL)
+    {
         (void) fprintf(stderr, "error converting HTTP time to time_t time: converting t to tm struct\n");
         return -1;
     }
-
+    
     t = mktime(&tm);
-    if (t == -1) {
+    if (t == -1)
+    {
         (void) fprintf(stderr, "error converting HTTP time to time_t time: converting t to time_t\n");
         return -1;
     }
-
+    
     return t;
 }
 
-int compare_http_time(char t1_str[HTTP_TIME_LEN], char t2_str[HTTP_TIME_LEN]) {
-    time_t t1, t2;
+int compare_http_time(char time1_str[HTTP_TIME_LEN], char time2_str[HTTP_TIME_LEN])
+{
+    time_t t1;
+    time_t t2;
     double diff;
-
-    t1 = http_time_to_time_t(t1_str);
-    if (t1 == -1) {
+    
+    t1 = http_time_to_time_t(time1_str);
+    if (t1 == -1)
+    {
         return -1;
     }
-    t2 = http_time_to_time_t(t2_str);
-    if (t2 == -1) {
+    t2 = http_time_to_time_t(time2_str);
+    if (t2 == -1)
+    {
         return -1;
     }
     diff = difftime(t1, t2);
-    if (diff > 0) {
+    if (diff > 0)
+    {
         return 1;
     }
     return 0;

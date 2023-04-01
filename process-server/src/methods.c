@@ -3,11 +3,12 @@
 #include "../include/methods.h"
 #include "../include/util.h"
 
-#include <unistd.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <stdlib.h>
+#include <unistd.h>
 
+// NOLINTNEXTLINE(modernize-macro-to-enum) : Macro is fine.
 #define CONTENT_LENGTH_MAX_DIGITS 32 /** The maximum number of digits acceptable for the content size. */
 
 /**
@@ -159,7 +160,8 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
     char               pathname[BUFSIZ];
     struct stat        st;
     struct http_header *h;
-    time_t             f_last_modified, h_last_modified;
+    time_t             f_last_modified;
+    time_t             h_last_modified;
     int                fd;
     
     h = get_header(H_IF_MODIFIED_SINCE, req->request_headers, req->num_request_headers);
@@ -252,12 +254,13 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     char               timestamp[HTTP_TIME_LEN];
     size_t             timestamp_size;
     uint8_t            *database_buffer;
-    size_t database_buffer_size;
+    size_t             database_buffer_size;
     
     // Read headers to determine if database or file system
     database_header       = get_header("database", request->extension_headers, request->num_extension_headers);
     content_length_header = get_header(H_CONTENT_LENGTH, request->request_headers, request->num_request_headers);
     
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Will never change
     entity_body_size = strtol(content_length_header->value, NULL, 10);
     
     // Get the timestamp.
@@ -270,7 +273,7 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     
     // Create a buffer for the database value.
     database_buffer_size = timestamp_size + entity_body_size + 1;
-    database_buffer = mm_malloc(database_buffer_size, co->mm);
+    database_buffer      = mm_malloc(database_buffer_size, co->mm);
     if (!database_buffer)
     {
         SET_ERROR(co->err);
@@ -377,7 +380,14 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
     }
     
     memset(entity_body_size, 0, CONTENT_LENGTH_MAX_DIGITS);
-    sprintf(entity_body_size, "%lu", strlen(*entity_body));
+    if (sprintf(entity_body_size, "%lu", strlen(*entity_body)) == -1)
+    {
+        mm_free(co->mm, content_type);
+        mm_free(co->mm, content_length);
+        mm_free(co->mm, headers);
+        SET_ERROR(co->err);
+        return -1;
+    }
     
     content_type   = set_header(co, H_CONTENT_TYPE, "text/html");
     content_length = set_header(co, H_CONTENT_LENGTH, entity_body_size);

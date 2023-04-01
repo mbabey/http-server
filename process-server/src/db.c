@@ -18,6 +18,7 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
         SET_ERROR(co->err);
         return -1;
     }
+    // NOLINTBEGIN(concurrency-mt-unsafe) : Protected
     db = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
     status = dbm_store(db, *key, *value, DBM_INSERT);
     if (db == (DBM *) 0)
@@ -32,6 +33,7 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
         status = dbm_store(db, *key, *value, DBM_REPLACE);
     }
     dbm_close(db);
+    // NOLINTEND(concurrency-mt-unsafe) : Protected
     sem_post(sem);
     
     if (status == -1) // If an error occurred in the insert or replace.

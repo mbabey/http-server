@@ -42,9 +42,10 @@ int main(int argc, char **argv)
                 pid_t pid;
                 
                 pid = getpid();
-                // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
+                // NOLINTBEGIN(concurrency-mt-unsafe) : No threads here
                 (void) fprintf(stderr, "Fatal: error during process %d runtime: ", pid);
                 GET_ERROR(co.err);
+                // NOLINTEND(concurrency-mt-unsafe)
                 next_state = close_server(&co);
                 break;
             }

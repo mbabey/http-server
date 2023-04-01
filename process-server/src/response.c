@@ -273,6 +273,11 @@ static size_t get_header_size_bytes(struct http_header **headers, TRACER_FUNCTIO
 {
     PRINT_STACK_TRACE(tracer);
     
+    if (!headers)
+    {
+        return 0;
+    }
+    
     size_t header_bytes_total;
     
     header_bytes_total = 0;
