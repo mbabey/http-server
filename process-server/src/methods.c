@@ -77,7 +77,7 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
  * @return 0 if the object was inserted, 1 if the object was updated, -1 and set err on failure.
  */
 static int store_in_db(struct core_object *co, struct state_object *so, char *uri,
-                       char *const *entity_body, size_t entity_body_size);
+                       char *entity_body, size_t entity_body_size);
 
 /**
  * store_in_fs
@@ -88,7 +88,7 @@ static int store_in_db(struct core_object *co, struct state_object *so, char *ur
  * @param request the request
  * @return 0 on success, -1 and set err on failure
  */
-static int store_in_fs(struct core_object *co, const struct http_request *request);
+static int store_in_fs(struct core_object *co, char *uri, char *entity_body, size_t entity_body_size);
 
 /**
  * post_assemble_response_innards
@@ -362,16 +362,16 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
         printf("%s: %s\n", database_header->key, database_header->value);
     }
     
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Will never change
+    entity_body_size = strtol(content_length_header->value, NULL, 10);
+    
     // Store with key as URI
     if (database_header && strcmp(to_lower(database_header->value), "true") == 0)
     {
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Will never change
-        entity_body_size = strtol(content_length_header->value, NULL, 10);
-        overwrite_status = store_in_db(co, so, request->request_line->request_URI, entity_body, entity_body_size);
-        
+        overwrite_status = store_in_db(co, so, request->request_line->request_URI, *entity_body, entity_body_size);
     } else
     {
-        overwrite_status = store_in_fs(co, request);
+        overwrite_status = store_in_fs(co, request->request_line->request_URI, *entity_body, entity_body_size);
     }
     
     switch (overwrite_status)
@@ -405,7 +405,7 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
 }
 
 static int store_in_db(struct core_object *co, struct state_object *so, char *uri,
-                       char *const *entity_body, size_t entity_body_size)
+                       char *entity_body, size_t entity_body_size)
 {
     PRINT_STACK_TRACE(co->tracer);
     
@@ -436,7 +436,7 @@ static int store_in_db(struct core_object *co, struct state_object *so, char *ur
     
     // Put the timestamp\0entitybody\0 into the buffer.
     memcpy(database_buffer, timestamp, timestamp_size);
-    memcpy(database_buffer + timestamp_size, *entity_body, entity_body_size);
+    memcpy(database_buffer + timestamp_size, entity_body, entity_body_size);
     *(database_buffer + database_buffer_size) = '\0'; // Place /0 at end.
     
     key.dptr    = uri;
@@ -451,7 +451,7 @@ static int store_in_db(struct core_object *co, struct state_object *so, char *ur
     return overwrite_status;
 }
 
-static int store_in_fs(struct core_object *co, const struct http_request *request)
+static int store_in_fs(struct core_object *co, char *uri, char *entity_body, size_t entity_body_size)
 {
     char pathname[BUFSIZ];
     int  overwrite_status;
@@ -465,8 +465,8 @@ static int store_in_fs(struct core_object *co, const struct http_request *reques
     
     strlcat(pathname, WRITE_DIR, BUFSIZ);
     
-    overwrite_status = write_to_dir(pathname, request->request_line->request_URI,
-                                    request->entity_body, strlen(request->entity_body));
+    overwrite_status = write_to_dir(pathname, uri,
+                                    entity_body, entity_body_size);
     if (overwrite_status == -1)
     {
         SET_ERROR(co->err);
