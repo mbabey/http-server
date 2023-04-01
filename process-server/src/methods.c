@@ -99,14 +99,14 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     method = request->request_line->method;
     
-    if (strcmp(method, "GET") == 0)
+    if (strcmp(method, M_GET) == 0)
     {
         http_get(co, so, request, status, headers, entity_body);
-    } else if (strcmp(method, "HEAD") == 0)
+    } else if (strcmp(method, M_HEAD) == 0)
     {
         *entity_body = NULL;
         http_head(co, so, request, status, headers);
-    } else if (strcmp(method, "POST") == 0)
+    } else if (strcmp(method, M_POST) == 0)
     {
         http_post(co, so, request, status, headers, entity_body);
     } else
