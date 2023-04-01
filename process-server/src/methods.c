@@ -120,8 +120,7 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
         http_get(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, M_HEAD) == 0)
     {
-        *entity_body = NULL;
-        http_head(co, so, request, status, headers);
+        http_head(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, M_POST) == 0)
     {
         http_post(co, so, request, status, headers, entity_body);
@@ -265,7 +264,8 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
     res = safe_dbm_fetch(co, DB_NAME, co->so->db_sem, &key, (uint8_t **)&data);
     if (res == -1) {
         return -1;
-    } else if (res == 1) {
+    }
+    if (res == 1) {
         *status      = NOT_FOUND_404;
         *headers     = NULL;
         *entity_body = NULL;
@@ -493,14 +493,21 @@ static int get_assemble_response_innards(off_t content_length, struct core_objec
         return -1;
     }
 
-    sprintf(content_length_str, "%lld", content_length);
+    if (sprintf(content_length_str, "%lld", content_length) < 0)
+    {
+        destroy_http_header(h_content_type, co);
+        return -1;
+    }
     h_content_length = set_header(co, H_CONTENT_TYPE,content_length_str);
     if (!h_content_length) {
+        destroy_http_header(h_content_type, co);
         return -1;
     }
 
     *headers = mm_calloc(num_headers + 1, sizeof(struct http_header), co->mm);
     if (!*headers) {
+        destroy_http_header(h_content_type, co);
+        destroy_http_header(h_content_type, co);
         SET_ERROR(co->err);
         return -1;
     }
