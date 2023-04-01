@@ -8,12 +8,12 @@
 #include <string.h>
 
 #define OPTS_LIST "i:p:t"
-#define USAGE_MESSAGE                                                                           \
-    "usage: ./http-server -i <ip address> [-p <port number>] [-t]\n"                                \
-    "\t-i <ip address>, run the server at this ip address.\n" \
-    "\t[-p <port number>], run the server at this port number;"\
-    "\t\tif not specified, default port is 80.\n"   \
-    "\t[-t], optionally trace the execution of the program.\n"
+#define USAGE_MESSAGE                                                   \
+    "\nusage: ./http-server -i <ip address> [-p <port number>] [-t]\n"  \
+    "\t-i <ip address>, run the server at this ip address.\n"           \
+    "\t[-p <port number>], run the server at this port number;"         \
+    "\n\t\tif not specified, default port is 80.\n"                     \
+    "\t[-t], optionally trace the execution of the program.\n\n"
 
 /**
  * parse_args
