@@ -104,6 +104,16 @@ int copy_dptr_to_buffer(struct core_object *co, uint8_t **buffer, datum *value)
     return ret_val;
 }
 
+/**
+ * create_split_dir
+ * <p>
+ * For URIs that are long as, split the URI to create the directories necessary to store the file.
+ * </p>
+ * @param co the core object
+ * @param new_dir_path the directory path
+ * @param save_dir the save directory
+ * @return 0 on success, -1 and set err on failure
+ */
 static int create_split_dir(struct core_object *co, char *new_dir_path, const char *save_dir);
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -131,8 +141,6 @@ int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, 
         SET_ERROR(co->err);
         return -1;
     }
-    
-    printf("%s\n", save_file_name);
     
     int ret_val;
     
@@ -182,6 +190,7 @@ static int create_split_dir(struct core_object *co, char *new_dir_path, const ch
         {
             *(new_dir_path_temp + length + 1) = '\0';
             create_dir(new_dir_path_temp);
+            break;
         }
     }
     
