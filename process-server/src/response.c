@@ -101,6 +101,7 @@ int assemble_send_response(struct core_object *co, int socket_fd,
     print_response(co, &response);
     
     // Serialize the response
+
     serial_response_size = serialize_http_response(co, &serial_response, &response);
     if (serial_response_size == 0)
     {
@@ -274,7 +275,6 @@ static size_t serialize_http_response(struct core_object *co, char **dst_buffer,
     
     strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE + 1);
     byte_offset += CRLF_SIZE;
-    
     // Serialize the headers.
     // Format: field-name ":" [ field-value ] CRLF
     if (response->headers)
@@ -294,6 +294,7 @@ static size_t serialize_http_response(struct core_object *co, char **dst_buffer,
             byte_offset += CRLF_SIZE;
         }
     }
+
     strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE + 1);
     byte_offset += CRLF_SIZE;
     

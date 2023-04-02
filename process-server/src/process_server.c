@@ -608,7 +608,7 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
         // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
         GET_ERROR(co->err);
     }
-    
+
     if (assemble_send_response(co, child->client_fd_local, status, headers, entity_body) == -1)
     {
         return -1;

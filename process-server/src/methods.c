@@ -176,22 +176,15 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
     {
         if (db_get(conditional, co, so, request, status, headers, entity_body) == -1)
         {
-//            *status      = INTERNAL_SERVER_ERROR_500;
-//            *headers     = NULL;
-//            *entity_body = NULL;
             return -1;
         }
     } else
     {
         if (fs_get(conditional, co, so, request, status, headers, entity_body) == -1)
         {
-//            *status      = INTERNAL_SERVER_ERROR_500;
-//            *headers     = NULL;
-//            *entity_body = NULL;
             return -1;
         }
     }
-    
     return 0;
 }
 
@@ -211,13 +204,13 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         SET_ERROR(co->err);
         return -1;
     }
-    strlcat(pathname, WRITE_DIR, BUFSIZ);
     strlcat(pathname, "/", BUFSIZ);
+    strlcat(pathname, WRITE_DIR, BUFSIZ);
     strlcat(pathname, req->request_line->request_URI, BUFSIZ);
     
     
     // not found response
-    if (stat(pathname, &st) == -1)
+    if (stat(pathname, &st) == -1 || !S_ISREG(st.st_mode))
     {
         *status      = NOT_FOUND_404;
         *headers     = NULL;
@@ -248,7 +241,8 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
             return 0;
         }
     }
-    
+
+    printf("OPEN FILE\n");
     fd = open(pathname, O_RDONLY);
     if (fd == -1)
     {
@@ -261,11 +255,12 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         SET_ERROR(co->err);
         return -1;
     }
+    printf("READ FULLY\n");
     if (read_fully(fd, *entity_body, st.st_size) == -1)
     {
         return -1;
     }
-    
+    printf("ASSEMBLE HEADERS\n");
     return get_assemble_response_innards(st.st_size, co, req, headers, entity_body);
 }
 
