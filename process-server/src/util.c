@@ -1,4 +1,5 @@
 #include "../include/manager.h"
+#include "../include/util.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -8,7 +9,6 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
-#include <util.h>
 
 // NOLINTNEXTLINE(modernize-macro-to-enum) : Macro is fine.
 #define BASE_10 10
@@ -139,16 +139,21 @@ char *rl_litlittok(char *str, char *sep)
     return temp;
 }
 
-void to_lower(char *s)
+char * to_lower(char *s)
 {
     for (int i = 0; s[i]; i++)
     {
         s[i] = (char) tolower(s[i]);
     }
+    return s;
 }
 
 struct http_header *get_header(const char *key, struct http_header **headers, const size_t num_headers)
 {
+    if (!headers)
+    {
+        return NULL;
+    }
     for (size_t i = 0; i < num_headers; i++)
     {
         if (strcmp(key, headers[i]->key) == 0)
@@ -212,8 +217,14 @@ void free_http_data(struct core_object *co, struct http_header **headers, char *
 {
     PRINT_STACK_TRACE(co->tracer);
     
-    free_all_headers(co, headers);
-    mm_free(co->mm, entity_body);
+    if (headers)
+    {
+        free_all_headers(co, headers);
+    }
+    if (entity_body)
+    {
+        mm_free(co->mm, entity_body);
+    }
 }
 
 size_t strtosize_t(char *str)

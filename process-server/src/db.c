@@ -105,24 +105,27 @@ int copy_dptr_to_buffer(struct core_object *co, uint8_t **buffer, datum *value)
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
+int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, const char *data_buffer,
                  size_t data_buf_size)
 {
+    PRINT_STACK_TRACE(co->tracer);
+    
     char *save_file_name = NULL;
     int  save_fd;
     
     if (set_string(&save_file_name, save_dir) == NULL)
     {
-        return -1;
-    }
-    if (append_string(&save_file_name, "/") == NULL)
-    {
+        SET_ERROR(co->err);
         return -1;
     }
     if (append_string(&save_file_name, file_name) == NULL)
     {
+        SET_ERROR(co->err);
         return -1;
     }
+    
+    //TODO: if multiple / in uri, need to create more dirs
+    printf("%s\n", save_file_name);
     
     int ret_val;
     
@@ -136,11 +139,13 @@ int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
     save_fd = open(save_file_name, O_CREAT | O_WRONLY | O_CLOEXEC | O_TRUNC, WR_DIR_FLAGS);
     if (save_fd == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
     if (write(save_fd, data_buffer, data_buf_size) == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     

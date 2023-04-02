@@ -49,18 +49,27 @@
 static void assemble_status_line(struct core_object *co, struct http_response *response, size_t status);
 
 /**
+ * print_response
+ * <p>
+ * Print the HTTP response.
+ * </p>
+ * @param co the core object
+ * @param response the response
+ */
+void print_response(struct core_object *co, struct http_response *response);
+
+/**
  * serialize_http_response
  * <p>
  * Serialize an HTTP Response object into a byte sequence.
  * </p>
  * @param co the core object
  * @param dst_buffer the destination byte buffer
- * @param src_response the response to be serialized
+ * @param response the response to be serialized
  * @param entity_body_size the size of the entity body in the response
- * @return 0 on success, -1 and set error on failure.
+ * @return size of serial buffer on success, 0 and set error on failure.
  */
-static int serialize_http_response(struct core_object *co, char **dst_buffer, size_t dst_buffer_size,
-                                   struct http_response *src_response);
+static size_t serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *response);
 
 /**
  * get_header_size_bytes
@@ -76,30 +85,38 @@ int assemble_send_response(struct core_object *co, int socket_fd,
                            size_t status, struct http_header **headers, const char *entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
+    printf("%s\n", entity_body);
     
     struct http_response response;
-    size_t               headers_size_bytes;
     size_t               serial_response_size;
     char                 *serial_response;
+    ssize_t              bytes_sent;
+    size_t               bytes_sent_total;
     
     // Assemble the status line, headers, and body of the response
     assemble_status_line(co, &response, status);
     response.headers     = headers;
     response.entity_body = entity_body;
     
+    print_response(co, &response);
+    
     // Serialize the response
-    headers_size_bytes   = get_header_size_bytes(response.headers, co->tracer);
-    serial_response_size = STATUS_LINE_SIZE(response.status_line) + CRLF_SIZE
-                           + headers_size_bytes // Includes CRLF_SIZE
-                           + CRLF_SIZE
-                           + (response.entity_body ? strlen(response.entity_body) : 0);
-    if (serialize_http_response(co, &serial_response, serial_response_size, &response) == -1)
+
+    serial_response_size = serialize_http_response(co, &serial_response, &response);
+    if (serial_response_size == 0)
     {
         return -1;
     }
     
     // Send the response
-    if (send(socket_fd, serial_response, serial_response_size, 0) == -1)
+    bytes_sent       = 0;
+    bytes_sent_total = 0;
+    while (bytes_sent != -1 && bytes_sent_total <= serial_response_size)
+    {
+        bytes_sent = send(socket_fd, serial_response, serial_response_size, 0);
+        bytes_sent_total += bytes_sent;
+    }
+    if (bytes_sent == -1)
     {
         SET_ERROR(co->err);
         return -1;
@@ -211,15 +228,24 @@ static void assemble_status_line(struct core_object *co, struct http_response *r
     }
 }
 
-static int serialize_http_response(struct core_object *co, char **dst_buffer, size_t dst_buffer_size,
-                                   struct http_response *src_response)
+static size_t serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *response)
 {
     PRINT_STACK_TRACE(co->tracer);
-    *dst_buffer = mm_malloc(dst_buffer_size, co->mm);
+    
+    size_t headers_size_bytes;
+    size_t serial_response_size;
+    
+    headers_size_bytes   = get_header_size_bytes(response->headers, co->tracer);
+    serial_response_size = STATUS_LINE_SIZE(response->status_line) + CRLF_SIZE
+                           + headers_size_bytes // Includes CRLF_SIZE
+                           + CRLF_SIZE
+                           + ((response->entity_body) ? strlen(response->entity_body) : 0);
+    
+    *dst_buffer = mm_malloc(serial_response_size, co->mm);
     if (!*dst_buffer)
     {
         SET_ERROR(co->err);
-        return -1;
+        return 0;
     }
     
     size_t             byte_offset;
@@ -229,42 +255,74 @@ static int serialize_http_response(struct core_object *co, char **dst_buffer, si
     
     // Serialize the status line. strcpy to avoid copying null byte.
     // Format: HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-    strcpy((*dst_buffer + byte_offset), src_response->status_line.version);
-    byte_offset += sizeof(src_response->status_line.version);
-    strcpy((*dst_buffer + byte_offset), SP_STR);
+    strlcpy((*dst_buffer + byte_offset), response->status_line.version,
+            strlen(response->status_line.version) + 1);
+    byte_offset += strlen(response->status_line.version);
+    
+    strlcpy((*dst_buffer + byte_offset), SP_STR, SP_SIZE + 1);
     byte_offset += SP_SIZE;
-    strcpy((*dst_buffer + byte_offset), src_response->status_line.status_code);
-    byte_offset += sizeof(src_response->status_line.status_code);
-    strcpy((*dst_buffer + byte_offset), SP_STR);
+    
+    strlcpy((*dst_buffer + byte_offset), response->status_line.status_code,
+            strlen(response->status_line.status_code) + 1);
+    byte_offset += strlen(response->status_line.status_code);
+    
+    strlcpy((*dst_buffer + byte_offset), SP_STR, SP_SIZE + 1);
     byte_offset += SP_SIZE;
-    strcpy((*dst_buffer + byte_offset), src_response->status_line.reason_phrase);
-    byte_offset += sizeof(src_response->status_line.reason_phrase);
-    strcpy((*dst_buffer + byte_offset), CRLF_STR);
+    
+    strlcpy((*dst_buffer + byte_offset), response->status_line.reason_phrase,
+            strlen(response->status_line.reason_phrase) + 1);
+    byte_offset += strlen(response->status_line.reason_phrase);
+    
+    strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE + 1);
     byte_offset += CRLF_SIZE;
     // Serialize the headers.
     // Format: field-name ":" [ field-value ] CRLF
-    headers = src_response->headers;
-    if (headers)
+    if (response->headers)
     {
-        for (; *headers; ++headers)
+        for (headers = response->headers; *headers; ++headers)
         {
-            strcpy((*dst_buffer + byte_offset), (*headers)->key);
+            strlcpy((*dst_buffer + byte_offset), (*headers)->key, strlen((*headers)->key) + 1);
             byte_offset += strlen((*headers)->key);
-            strcpy((*dst_buffer + byte_offset), COLON_SP_STR);
+            
+            strlcpy((*dst_buffer + byte_offset), COLON_SP_STR, COLON_SP_SIZE + 1);
             byte_offset += COLON_SP_SIZE;
-            strcpy((*dst_buffer + byte_offset), (*headers)->value);
+            
+            strlcpy((*dst_buffer + byte_offset), (*headers)->value, strlen((*headers)->value) + 1);
             byte_offset += strlen((*headers)->value);
-            strcpy((*dst_buffer + byte_offset), CRLF_STR);
+            
+            strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE + 1);
             byte_offset += CRLF_SIZE;
         }
     }
 
-    strcpy((*dst_buffer + byte_offset), CRLF_STR);
+    strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE + 1);
     byte_offset += CRLF_SIZE;
     
-    strcpy((*dst_buffer + byte_offset), src_response->entity_body);
+    if (response->entity_body)
+    {
+        strlcpy((*dst_buffer + byte_offset), response->entity_body,
+                strlen(response->entity_body) + 1);
+    }
     
-    return 0;
+    return serial_response_size;
+}
+
+void print_response(struct core_object *co, struct http_response *response)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    struct http_header **headers;
+    
+    printf("%s %s %s\r\n", response->status_line.version, response->status_line.status_code,
+           response->status_line.reason_phrase);
+    if (response->headers)
+    {
+        for (headers = response->headers; *headers; ++headers)
+        {
+            printf("%s: %s\r\n", (*headers)->key, (*headers)->value);
+        }
+    }
+    printf("\r\n%s", (response->entity_body) ? response->entity_body : "");
 }
 
 static size_t get_header_size_bytes(struct http_header **headers, TRACER_FUNCTION_AS(tracer))

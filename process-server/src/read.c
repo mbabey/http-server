@@ -189,7 +189,7 @@ static int read_entity_body(int fd, struct http_request * req, struct core_objec
         if (length == 0) {
             return FAILURE;
         }
-        req->entity_body = mm_malloc(length, co->mm);
+        req->entity_body = mm_malloc(length + 1, co->mm);
         if (!req->entity_body) {
             SET_ERROR(co->err);
             return FAILURE;
@@ -198,6 +198,7 @@ static int read_entity_body(int fd, struct http_request * req, struct core_objec
         if (read_fully(fd,req->entity_body, length) == -1) {
             return FAILURE;
         }
+        *(req->entity_body + length) = '\0';
     }
     return SUCCESS;
 }
