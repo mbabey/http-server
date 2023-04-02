@@ -105,9 +105,11 @@ int copy_dptr_to_buffer(struct core_object *co, uint8_t **buffer, datum *value)
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer,
+int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, const char *data_buffer,
                  size_t data_buf_size)
 {
+    PRINT_STACK_TRACE(co->tracer);
+    
     char *save_file_name = NULL;
     int  save_fd;
     

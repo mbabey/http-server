@@ -168,17 +168,19 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
     {
         if (db_get(conditional, co, so, request, status, headers, entity_body) == -1)
         {
-            *status      = INTERNAL_SERVER_ERROR_500;
-            *headers     = NULL;
-            *entity_body = NULL;
+//            *status      = INTERNAL_SERVER_ERROR_500;
+//            *headers     = NULL;
+//            *entity_body = NULL;
+            return -1;
         }
     } else
     {
         if (fs_get(conditional, co, so, request, status, headers, entity_body) == -1)
         {
-            *status      = INTERNAL_SERVER_ERROR_500;
-            *headers     = NULL;
-            *entity_body = NULL;
+//            *status      = INTERNAL_SERVER_ERROR_500;
+//            *headers     = NULL;
+//            *entity_body = NULL;
+            return -1;
         }
     }
     
@@ -453,6 +455,8 @@ static int store_in_db(struct core_object *co, struct state_object *so, char *ur
 
 static int store_in_fs(struct core_object *co, char *uri, char *entity_body, size_t entity_body_size)
 {
+    PRINT_STACK_TRACE(co->tracer);
+    
     char pathname[BUFSIZ];
     int  overwrite_status;
     
@@ -465,7 +469,7 @@ static int store_in_fs(struct core_object *co, char *uri, char *entity_body, siz
     
     strlcat(pathname, WRITE_DIR, BUFSIZ);
     
-    overwrite_status = write_to_dir(pathname, uri,
+    overwrite_status = write_to_dir(co, pathname, uri,
                                     entity_body, entity_body_size);
     if (overwrite_status == -1)
     {

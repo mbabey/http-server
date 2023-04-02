@@ -55,7 +55,8 @@ int copy_dptr_to_buffer(struct core_object *co, uint8_t **buffer, datum *value);
  * @param data_buf_size - uint32_t: the size of the file
  * @return 0 on success, -1 on failure.
  */
-int write_to_dir(char *save_dir, const char *file_name, const char *data_buffer, size_t data_buf_size);
+int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, const char *data_buffer,
+                 size_t data_buf_size);
 
 /**
  * print_db_error
