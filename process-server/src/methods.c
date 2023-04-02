@@ -128,6 +128,8 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     method = request->request_line->method;
     
+    printf("%s\n", *entity_body);
+    
     if (strcmp(method, M_GET) == 0)
     {
         if (http_get(co, so, request, status, headers, entity_body) == -1)
@@ -475,13 +477,13 @@ static int store_in_fs(struct core_object *co, char *uri, char *entity_body, siz
         return -1;
     }
     
+    *(pathname + strlen(pathname)) = '/';
     strlcat(pathname, WRITE_DIR, BUFSIZ);
     
     overwrite_status = write_to_dir(co, pathname, uri,
                                     entity_body, entity_body_size);
     if (overwrite_status == -1)
     {
-        SET_ERROR(co->err);
         return -1;
     }
     

@@ -601,15 +601,13 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
     
     if (perform_method(co, so, request, &status, &headers, &entity_body) == -1)
     {
-        // if there is an error, should just set status to 500
+        // if there is an error, set status to 500
         status      = INTERNAL_SERVER_ERROR_500;
         entity_body = NULL;
         headers     = NULL;
         // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
         GET_ERROR(co->err);
-    printf("%p\n", (void *) headers);
     }
-
     
     if (assemble_send_response(co, child->client_fd_local, status, headers, entity_body) == -1)
     {

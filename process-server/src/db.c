@@ -115,16 +115,17 @@ int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, 
     
     if (set_string(&save_file_name, save_dir) == NULL)
     {
-        return -1;
-    }
-    if (append_string(&save_file_name, "/") == NULL)
-    {
+        SET_ERROR(co->err);
         return -1;
     }
     if (append_string(&save_file_name, file_name) == NULL)
     {
+        SET_ERROR(co->err);
         return -1;
     }
+    
+    //TODO: if multiple / in uri, need to create more dirs
+    printf("%s\n", save_file_name);
     
     int ret_val;
     
@@ -138,11 +139,13 @@ int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, 
     save_fd = open(save_file_name, O_CREAT | O_WRONLY | O_CLOEXEC | O_TRUNC, WR_DIR_FLAGS);
     if (save_fd == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
     if (write(save_fd, data_buffer, data_buf_size) == -1)
     {
+        SET_ERROR(co->err);
         return -1;
     }
     
