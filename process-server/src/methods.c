@@ -128,7 +128,7 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     method = request->request_line->method;
     
-    printf("%s\n", *entity_body);
+    printf("%s\n", request->entity_body);
     
     if (strcmp(method, M_GET) == 0)
     {
