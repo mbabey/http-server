@@ -96,7 +96,8 @@ int assemble_send_response(struct core_object *co, int socket_fd,
     assemble_status_line(co, &response, status);
     response.headers     = headers;
     response.entity_body = entity_body;
-    printf("%p\n", (void *) *headers);
+    
+    printf("%d\n", *(int*) headers);
     print_response(co, &response);
     
     // Serialize the response

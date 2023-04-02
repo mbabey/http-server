@@ -124,20 +124,28 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
 {
     PRINT_STACK_TRACE(co->tracer);
     
-    // tree on request line
     char *method;
     
     method = request->request_line->method;
     
     if (strcmp(method, M_GET) == 0)
     {
-        http_get(co, so, request, status, headers, entity_body);
+        if (http_get(co, so, request, status, headers, entity_body) == -1)
+        {
+            return -1;
+        }
     } else if (strcmp(method, M_HEAD) == 0)
     {
-        http_head(co, so, request, status, headers, entity_body);
+        if (http_head(co, so, request, status, headers, entity_body) == -1)
+        {
+            return -1;
+        }
     } else if (strcmp(method, M_POST) == 0)
     {
-        http_post(co, so, request, status, headers, entity_body);
+        if (http_post(co, so, request, status, headers, entity_body) == -1)
+        {
+            return -1;
+        }
     } else
     {
         *status      = NOT_IMPLEMENTED_501;
