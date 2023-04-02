@@ -128,10 +128,6 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     method = request->request_line->method;
     
-    *entity_body = mm_strdup(request->entity_body, co->mm);
-    
-    printf("perform_method: %s\n", *entity_body);
-    
     if (strcmp(method, M_GET) == 0)
     {
         if (http_get(co, so, request, status, headers, entity_body) == -1)
@@ -375,6 +371,8 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     {
         printf("%s: %s\n", database_header->key, database_header->value);
     }
+    
+    *entity_body = mm_strdup(request->entity_body, co->mm);
     
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Will never change
     entity_body_size = strtol(content_length_header->value, NULL, 10);
