@@ -230,12 +230,8 @@ void free_http_data(struct core_object *co, struct http_header **headers, char *
 size_t strtosize_t(char *str)
 {
     size_t val;
+    errno = 0;
     val = strtoul(str, NULL, BASE_10);
-    if (val == 0)
-    {
-        perror("strtoul parsing string");
-        return 0;
-    }
     return val;
 }
 

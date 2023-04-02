@@ -5,6 +5,18 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+/**
+ * create_split_dir
+ * <p>
+ * For URIs that are long as, split the URI to create the directories necessary to store the file.
+ * </p>
+ * @param co the core object
+ * @param new_dir_path the directory path
+ * @param save_dir the save directory
+ * @return 0 on success, -1 and set err on failure
+ */
+static int create_split_dir(struct core_object *co, char *new_dir_path, const char *save_dir);
+
 int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *key, datum *value)
 {
     PRINT_STACK_TRACE(co->tracer);
@@ -103,18 +115,6 @@ int copy_dptr_to_buffer(struct core_object *co, uint8_t **buffer, datum *value)
     
     return ret_val;
 }
-
-/**
- * create_split_dir
- * <p>
- * For URIs that are long as, split the URI to create the directories necessary to store the file.
- * </p>
- * @param co the core object
- * @param new_dir_path the directory path
- * @param save_dir the save directory
- * @return 0 on success, -1 and set err on failure
- */
-static int create_split_dir(struct core_object *co, char *new_dir_path, const char *save_dir);
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, const char *data_buffer,
