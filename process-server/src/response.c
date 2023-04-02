@@ -92,7 +92,7 @@ int assemble_send_response(struct core_object *co, int socket_fd,
     serial_response_size = STATUS_LINE_SIZE(response.status_line) + CRLF_SIZE
                            + headers_size_bytes // Includes CRLF_SIZE
                            + CRLF_SIZE
-                           + strlen(response.entity_body);
+                           + (response.entity_body ? strlen(response.entity_body) : 0);
     if (serialize_http_response(co, &serial_response, serial_response_size, &response) == -1)
     {
         return -1;
@@ -215,7 +215,6 @@ static int serialize_http_response(struct core_object *co, char **dst_buffer, si
                                    struct http_response *src_response)
 {
     PRINT_STACK_TRACE(co->tracer);
-    
     *dst_buffer = mm_malloc(dst_buffer_size, co->mm);
     if (!*dst_buffer)
     {
@@ -242,7 +241,6 @@ static int serialize_http_response(struct core_object *co, char **dst_buffer, si
     byte_offset += sizeof(src_response->status_line.reason_phrase);
     strcpy((*dst_buffer + byte_offset), CRLF_STR);
     byte_offset += CRLF_SIZE;
-    
     // Serialize the headers.
     // Format: field-name ":" [ field-value ] CRLF
     headers = src_response->headers;
@@ -260,7 +258,7 @@ static int serialize_http_response(struct core_object *co, char **dst_buffer, si
             byte_offset += CRLF_SIZE;
         }
     }
-    
+
     strcpy((*dst_buffer + byte_offset), CRLF_STR);
     byte_offset += CRLF_SIZE;
     

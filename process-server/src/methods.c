@@ -120,8 +120,7 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
         http_get(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, M_HEAD) == 0)
     {
-        *entity_body = NULL;
-        http_head(co, so, request, status, headers);
+        http_head(co, so, request, status, headers, entity_body);
     } else if (strcmp(method, M_POST) == 0)
     {
         http_post(co, so, request, status, headers, entity_body);
@@ -187,8 +186,8 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         SET_ERROR(co->err);
         return -1;
     }
-    strlcat(pathname, WRITE_DIR, BUFSIZ);
     strlcat(pathname, "/", BUFSIZ);
+    strlcat(pathname, WRITE_DIR, BUFSIZ);
     strlcat(pathname, req->request_line->request_URI, BUFSIZ);
 
 
