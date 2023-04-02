@@ -85,6 +85,7 @@ int assemble_send_response(struct core_object *co, int socket_fd,
                            size_t status, struct http_header **headers, const char *entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
+    printf("%s\n", entity_body);
     
     struct http_response response;
     size_t               serial_response_size;
@@ -238,8 +239,6 @@ static size_t serialize_http_response(struct core_object *co, char **dst_buffer,
                            + headers_size_bytes // Includes CRLF_SIZE
                            + CRLF_SIZE
                            + ((response->entity_body) ? strlen(response->entity_body) : 0);
-    
-    print_response(co, response);
     
     *dst_buffer = mm_malloc(serial_response_size, co->mm);
     if (!*dst_buffer)

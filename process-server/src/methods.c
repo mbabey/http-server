@@ -128,7 +128,9 @@ int perform_method(struct core_object *co, struct state_object *so, struct http_
     
     method = request->request_line->method;
     
-    printf("%s\n", request->entity_body);
+    *entity_body = mm_strdup(request->entity_body, co->mm);
+    
+    printf("perform_method: %s\n", *entity_body);
     
     if (strcmp(method, M_GET) == 0)
     {
@@ -500,8 +502,6 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
     struct http_header *content_length;
     char               entity_body_size[CONTENT_LENGTH_MAX_DIGITS];
     size_t             offset;
-    
-    *entity_body = request->entity_body;
     
     content_type   = mm_malloc(sizeof(struct http_header), co->mm);
     content_length = mm_malloc(sizeof(struct http_header), co->mm);
