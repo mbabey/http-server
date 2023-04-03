@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(ndbm_database_viewer
+project(ndbm-database-viewer
         VERSION 0.0.1
         DESCRIPTION ""
         LANGUAGES C)
@@ -9,13 +9,14 @@ set(CMAKE_C_STANDARD 17)
 
 set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+set(SUPER_DIR process-server)
 set(SOURCE_LIST
         ${SOURCE_DIR}/main.c
-        ${SOURCE_DIR}/manager.c
+        ../${SUPER_DIR}/${SOURCE_DIR}/manager.c
         )
 set(HEADER_LIST
-        ${INCLUDE_DIR}/error-handlers.h
-        ${INCLUDE_DIR}/manager.h
+        ../${SUPER_DIR}/${INCLUDE_DIR}/error-handlers.h
+        ../${SUPER_DIR}/${INCLUDE_DIR}/manager.h
         )
 
 set(SANITIZE TRUE)
@@ -110,7 +111,7 @@ set(DOXYGEN_QUIET YES)
 doxygen_add_docs(doxygen
         ${HEADER_LIST}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        COMMENT "Generating Doxygen documentation for ndbm_database_viewer")
+        COMMENT "Generating Doxygen documentation for ndbm-database-viewer")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CLANG_TIDY_CHECKS "*")
@@ -135,5 +136,5 @@ set(CLANG_TIDY_CHECKS "${CLANG_TIDY_CHECKS},-clang-analyzer-security.insecureAPI
 set(CLANG_TIDY_CHECKS "${CLANG_TIDY_CHECKS},-android-cloexec-accept")
 set(CMAKE_C_CLANG_TIDY clang-tidy -checks=${CLANG_TIDY_CHECKS};--quiet)
 
-add_executable(ndbm_database_viewer ${SOURCE_LIST})
-add_dependencies(ndbm_database_viewer doxygen)
+add_executable(ndbm-database-viewer ${SOURCE_LIST})
+add_dependencies(ndbm-database-viewer doxygen)

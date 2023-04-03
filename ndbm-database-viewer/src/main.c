@@ -1,5 +1,5 @@
-#include "../include/error-handlers.h"
-#include "../include/manager.h"
+#include "../../process-server/include/error_handlers.h"
+#include "../../process-server/include/manager.h"
 
 #include <ctype.h>
 #include <getopt.h>
