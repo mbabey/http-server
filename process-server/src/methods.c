@@ -444,10 +444,10 @@ static int store_in_db(struct core_object *co, struct state_object *so, char *ur
     // Put the timestamp\0entitybody\0 into the buffer.
     memcpy(database_buffer, timestamp, timestamp_size);
     memcpy(database_buffer + timestamp_size, entity_body, entity_body_size);
-    *(database_buffer + database_buffer_size) = '\0'; // Place /0 at end.
+    *(database_buffer + database_buffer_size - 1) = '\0'; // Place /0 at end.
     
     key.dptr    = uri;
-    key.dsize   = strlen(uri);
+    key.dsize   = strlen(uri) + 1;
     value.dptr  = database_buffer;
     value.dsize = database_buffer_size;
     

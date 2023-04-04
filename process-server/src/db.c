@@ -5,6 +5,18 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+/**
+ * create_split_dir
+ * <p>
+ * For URIs that are long as, split the URI to create the directories necessary to store the file.
+ * </p>
+ * @param co the core object
+ * @param new_dir_path the directory path
+ * @param save_dir the save directory
+ * @return 0 on success, -1 and set err on failure
+ */
+static int create_split_dir(struct core_object *co, char *new_dir_path, const char *save_dir);
+
 int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *key, datum *value)
 {
     PRINT_STACK_TRACE(co->tracer);
@@ -19,7 +31,7 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
         return -1;
     }
     // NOLINTBEGIN(concurrency-mt-unsafe) : Protected
-    db = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
+    db     = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
     status = dbm_store(db, *key, *value, DBM_INSERT);
     if (db == (DBM *) 0)
     {
@@ -124,8 +136,11 @@ int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, 
         return -1;
     }
     
-    //TODO: if multiple / in uri, need to create more dirs
-    printf("%s\n", save_file_name);
+    if (create_split_dir(co, save_file_name, save_dir) == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
     
     int ret_val;
     
@@ -153,6 +168,35 @@ int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, 
     free(save_file_name);
     
     return ret_val;
+}
+
+
+static int create_split_dir(struct core_object *co, char *new_dir_path, const char *save_dir)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    char *new_dir_path_temp;
+    
+    new_dir_path_temp = strdup(new_dir_path);
+    if (!new_dir_path_temp)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
+    
+    for (size_t length = strlen(new_dir_path_temp); strcmp(new_dir_path_temp, save_dir) != 0 && length > 0; --length)
+    {
+        if (*(new_dir_path_temp + length) == '/')
+        {
+            *(new_dir_path_temp + length + 1) = '\0';
+            create_dir(new_dir_path_temp);
+            break;
+        }
+    }
+    
+    free(new_dir_path_temp);
+    
+    return 0;
 }
 
 void print_db_error(DBM *db)

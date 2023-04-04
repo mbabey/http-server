@@ -186,7 +186,8 @@ static int read_entity_body(int fd, struct http_request * req, struct core_objec
     struct http_header * c_length = get_header(H_CONTENT_LENGTH, req->entity_headers, req->num_entity_headers);
     if (c_length) {
         size_t length = strtosize_t(c_length->value);
-        if (length == 0) {
+        if (length == 0 && (errno == EINVAL || errno == ERANGE)) {
+            SET_ERROR(co->err);
             return FAILURE;
         }
         req->entity_body = mm_malloc(length + 1, co->mm);
@@ -196,6 +197,7 @@ static int read_entity_body(int fd, struct http_request * req, struct core_objec
         }
 
         if (read_fully(fd,req->entity_body, length) == -1) {
+            SET_ERROR(co->err);
             return FAILURE;
         }
         *(req->entity_body + length) = '\0';

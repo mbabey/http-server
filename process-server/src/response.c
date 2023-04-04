@@ -85,7 +85,6 @@ int assemble_send_response(struct core_object *co, int socket_fd,
                            size_t status, struct http_header **headers, const char *entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
-    printf("%s\n", entity_body);
     
     struct http_response response;
     size_t               serial_response_size;
@@ -322,7 +321,7 @@ void print_response(struct core_object *co, struct http_response *response)
             printf("%s: %s\r\n", (*headers)->key, (*headers)->value);
         }
     }
-    printf("\r\n%s", (response->entity_body) ? response->entity_body : "");
+    printf("\r\n%s\n", (response->entity_body) ? response->entity_body : "");
 }
 
 static size_t get_header_size_bytes(struct http_header **headers, TRACER_FUNCTION_AS(tracer))
