@@ -545,7 +545,7 @@ static int get_assemble_response_innards(off_t content_length, struct core_objec
         destroy_http_header(h_content_type, co);
         return -1;
     }
-    h_content_length = set_header(co, H_CONTENT_TYPE, content_length_str);
+    h_content_length = set_header(co, H_CONTENT_LENGTH, content_length_str);
     if (!h_content_length)
     {
         destroy_http_header(h_content_type, co);
