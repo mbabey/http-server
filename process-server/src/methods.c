@@ -43,6 +43,7 @@ static int db_get(bool conditional, struct core_object *co, struct state_object 
  * @param request the request
  * @param status pointer to the status field for the response
  * @param headers pointer to the header list for the response
+ * @param entity_body the entity body
  * @return 0 on success, -1 and set err on failure
  */
 static int http_head(struct core_object *co, struct state_object *so, struct http_request *request,
@@ -85,7 +86,9 @@ static int store_in_db(struct core_object *co, struct state_object *so, char *ur
  * Store the entity body of a request in the file system at its request line.
  * </p>
  * @param co the core object
- * @param request the request
+ * @param uri the uri at which to store the entity body
+ * @param entity_body the entity body
+ * @param entity_body_size the entity body size
  * @return 0 on success, -1 and set err on failure
  */
 static int store_in_fs(struct core_object *co, char *uri, char *entity_body, size_t entity_body_size);
@@ -386,19 +389,11 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
         case 0: // insert no overwrite
         {
             *status = CREATED_201;
-            if (post_assemble_response_innards(co, request, headers, entity_body) == -1)
-            {
-                return -1;
-            }
             break;
         }
         case 1: // insert overwrite
         {
             *status = OK_200;
-            if (post_assemble_response_innards(co, request, headers, entity_body) == -1)
-            {
-                return -1;
-            }
             break;
         }
         case -1: // error
@@ -406,6 +401,11 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
             return -1;
         }
         default:;
+    }
+    
+    if (post_assemble_response_innards(co, request, headers, entity_body) == -1)
+    {
+        return -1;
     }
     
     return 0;
@@ -477,10 +477,6 @@ static int store_in_fs(struct core_object *co, char *uri, char *entity_body, siz
     
     overwrite_status = write_to_dir(co, pathname, uri,
                                     entity_body, entity_body_size);
-    if (overwrite_status == -1)
-    {
-        return -1;
-    }
     
     return overwrite_status;
 }

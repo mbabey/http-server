@@ -49,10 +49,10 @@ int copy_dptr_to_buffer(struct core_object *co, uint8_t **buffer, datum *value);
  * Save the file information in data_buffer to the directory path specified by save_dir under
  * the name file_name.
  * </p>
- * @param save_dir - char *: the directory to which the file will be saved
- * @param file_name - char *: the name of the file
- * @param data_buffer - char *: the file information
- * @param data_buf_size - uint32_t: the size of the file
+ * @param save_dir the directory to which the file will be saved
+ * @param file_name the name of the file
+ * @param data_buffer the file information
+ * @param data_buf_size the size of the file
  * @return 0 on success, -1 on failure.
  */
 int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, const char *data_buffer,

@@ -138,7 +138,7 @@ struct state_object
     sem_t                *domain_sems[2];
     sem_t                *c_to_p_pipe_sem_write;
     sem_t                *db_sem;
-    DBM                  *db;
+    
     struct parent_struct *parent;
     struct child_struct  *child;
 };
@@ -209,7 +209,7 @@ struct http_status_line
     const char *reason_phrase;
 };
 
-/**
+/**s
  * HTTP Response.
  */
 struct http_response

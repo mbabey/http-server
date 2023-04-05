@@ -6,7 +6,7 @@
 /**
  * init_http_request
  * <p>
- * Reads a HTTP 1.0 request from a client socket into a http_request struct.
+ * Allocate memory for an http_request struct in the memory manager.
  * </p>
  * @param co the core object.
  * @return a pointer to a http_request struct on success. NULL on failure.

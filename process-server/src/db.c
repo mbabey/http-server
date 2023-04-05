@@ -32,13 +32,13 @@ int db_upsert(struct core_object *co, const char *db_name, sem_t *sem, datum *ke
     }
     // NOLINTBEGIN(concurrency-mt-unsafe) : Protected
     db     = dbm_open(db_name, DB_FLAGS, DB_FILE_MODE);
-    status = dbm_store(db, *key, *value, DBM_INSERT);
     if (db == (DBM *) 0)
     {
         SET_ERROR(co->err);
         sem_post(sem);
         return -1;
     }
+    status = dbm_store(db, *key, *value, DBM_INSERT);
     ret_val = status; // ret_val will be 1, 0, or -1
     if (status == 1)
     {
@@ -169,7 +169,6 @@ int write_to_dir(struct core_object *co, char *save_dir, const char *file_name, 
     
     return ret_val;
 }
-
 
 static int create_split_dir(struct core_object *co, char *new_dir_path, const char *save_dir)
 {

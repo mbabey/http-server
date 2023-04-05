@@ -614,6 +614,7 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
         GET_ERROR(co->err);
     }
 
+    // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage): Status will be initialized; result is either -1 or 0
     if (assemble_send_response(co, child->client_fd_local, status, headers, entity_body) == -1)
     {
         return -1;
