@@ -249,7 +249,7 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
         SET_ERROR(co->err);
         return -1;
     }
-    *entity_body = mm_calloc(st.st_size, sizeof(char), co->mm);
+    *entity_body = mm_calloc(st.st_size + 1, sizeof(char), co->mm);
     if (!*entity_body)
     {
         SET_ERROR(co->err);
@@ -260,6 +260,7 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
     {
         return -1;
     }
+    (*entity_body)[st.st_size] = '\0';
     printf("ASSEMBLE HEADERS\n");
     return get_assemble_response_innards(st.st_size, co, req, headers, entity_body);
 }
