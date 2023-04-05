@@ -4,9 +4,9 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <ndbm.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <semaphore.h>
 
 /** The command line flags. */
 #define OPTS_LIST "d:s:t"
