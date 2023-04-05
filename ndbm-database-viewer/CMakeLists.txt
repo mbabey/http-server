@@ -7,16 +7,16 @@ project(ndbm-database-viewer
 
 set(CMAKE_C_STANDARD 17)
 
-set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
-set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+set(SOURCE_DIR src)
+set(INCLUDE_DIR include)
 set(SUPER_DIR process-server)
 set(SOURCE_LIST
         ${SOURCE_DIR}/main.c
-        ${SOURCE_DIR}/../../${SUPER_DIR}/src/manager.c
+        ../${SUPER_DIR}/${SOURCE_DIR}/manager.c
         )
 set(HEADER_LIST
-        ${INCLUDE_DIR}/../../${SUPER_DIR}/include/error-handlers.h
-        ${INCLUDE_DIR}/../../${SUPER_DIR}/include/manager.h
+        ../${SUPER_DIR}/${INCLUDE_DIR}/error_handlers.h
+        ../${SUPER_DIR}/${INCLUDE_DIR}/manager.h
         )
 
 set(SANITIZE TRUE)

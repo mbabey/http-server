@@ -16,7 +16,7 @@
     "usage: ./ndbm-database-viewer -d <database-name> [-s <semaphore-name>] [-t]\n" \
     "\t-d <database-name>: The path to the database to view.\n"\
     "\t[-s <semaphore-name>]: The database semaphore name.\n"\
-    "\t[-t]: Trace the program execution."
+    "\t[-t]: Trace the program execution.\n\n"
 
 #define DB_FLAGS (O_RDWR | O_CREAT)          /** Flags for opening db. */
 #define DB_FILE_MODE (S_IRUSR | S_IWUSR)     /** File mode for opening db. */
@@ -25,7 +25,7 @@
 #define PRINT_FORMAT "{ key: \"%s\", value: \"%s %s\" }\n"
 
 /** Function call to print a database entry. */
-#define PRINT_ENTRY(key, value) (void) fprintf(stdout, PRINT_FORMAT, (char *) key.dptr, (char *) value.dptr, ((char *) value.dptr + strlen((char *) value.dptr) + 1))
+#define PRINT_ENTRY(key, value) (void) fprintf(stdout, PRINT_FORMAT, (char *) (key).dptr, (char *) (value).dptr, ((char *) (value).dptr + strlen((char *) (value).dptr) + 1))
 
 /**
  * The program state. Holds necessary global program information.
@@ -122,7 +122,10 @@ int main(int argc, char **argv)
     
     if (status == -1)
     {
-        GET_ERROR(ps.err);
+        if (ps.err.error_number)
+        {
+            GET_ERROR(ps.err);
+        }
         status = EXIT_FAILURE;
     } else
     {
@@ -225,6 +228,8 @@ static int setup_program_state_variables(struct program_state *ps, const char *d
     
     if (!database_name_str)
     {
+        // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
+        (void) fprintf(stdout, USAGE_MESSAGE);
         return -1;
     }
     
@@ -244,6 +249,9 @@ static int scan_database(struct program_state *ps)
     DBM   *db;
     datum key;
     datum value;
+    int   count;
+    
+    count = 0;
     
     if (ps->db_sem && sem_wait(ps->db_sem) == -1)
     {
@@ -263,11 +271,12 @@ static int scan_database(struct program_state *ps)
     {
         print_db_error(db);
     }
-
+    
     if (key.dptr)
     {
         // NOLINTNEXTLINE(concurrency-mt-unsafe): No threads here
         PRINT_ENTRY(key, value);
+        ++count;
     }
     // Compare the display name to the name in the db
     while (key.dptr)
@@ -283,9 +292,14 @@ static int scan_database(struct program_state *ps)
         {
             // NOLINTNEXTLINE(concurrency-mt-unsafe): No threads here
             PRINT_ENTRY(key, value);
+            ++count;
         }
     }
     
+    if (count)
+    {
+        (void) fprintf(stdout, "No records found; check the path to the database to ensure it is correct.\n");
+    }
     dbm_close(db);
     // NOLINTEND(concurrency-mt-unsafe) : Protected
     if (ps->db_sem)
