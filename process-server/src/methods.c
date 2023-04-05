@@ -342,12 +342,14 @@ static int http_head(struct core_object *co, struct state_object *so, struct htt
     {
         return -1;
     }
-    if (mm_free(co->mm, *entity_body) == -1)
-    {
-        SET_ERROR(co->err);
-        return -1;
+    if (*entity_body) {
+        if (mm_free(co->mm, *entity_body) == -1)
+        {
+            SET_ERROR(co->err);
+            return -1;
+        }
+        *entity_body = NULL;
     }
-    *entity_body = NULL;
     return 0;
 }
 
