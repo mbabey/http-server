@@ -106,34 +106,55 @@ static int scan_database(struct program_state *ps);
  */
 static void print_db_error(DBM *db);
 
+/**
+ * run
+ * <p>
+ * Run the program.
+ * </p>
+ * @param ps the program state
+ * @param argc the argument count
+ * @param argv the argument vector
+ * @return 0 on success, 1 on failure
+ */
+static int run(struct program_state *ps, int argc, char **argv);
+
 int main(int argc, char **argv)
 {
-    int                  status;
+    int status;
     struct program_state ps;
     
-    memset(&ps, 0, sizeof(ps));
-    ps.mm = init_mem_manager();
-    status = parse_args(argc, argv, &ps);
+    status = run(&ps, argc, argv);
+    
+    destroy_program_state(&ps);
+    free_mem_manager(ps.mm);
+    
+    return status;
+}
+
+static int run(struct program_state *ps, int argc, char **argv)
+{
+    int status;
+    
+    memset(ps, 0, sizeof(struct program_state));
+    ps->mm = init_mem_manager();
+    status = parse_args(argc, argv, ps);
     
     if (status == 0)
     {
-        status = scan_database(&ps);
+        status = scan_database(ps);
     }
     
     if (status == -1)
     {
-        if (ps.err.error_number)
+        if ((*ps).err.error_number)
         {
-            GET_ERROR(ps.err);
+            GET_ERROR((*ps).err);
         }
         status = EXIT_FAILURE;
     } else
     {
         status = EXIT_SUCCESS;
     }
-    
-    destroy_program_state(&ps);
-    free_mem_manager(ps.mm);
     
     return status;
 }
@@ -296,7 +317,7 @@ static int scan_database(struct program_state *ps)
         }
     }
     
-    if (count)
+    if (!count)
     {
         (void) fprintf(stdout, "No records found; check the path to the database to ensure it is correct.\n");
     }
