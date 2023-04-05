@@ -116,8 +116,8 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
  * @param entity_body pointer to the entity body for the response
  * @return 0 on success, -1 on failure
  */
-static int get_assemble_response_innards(off_t content_length, struct core_object *co, struct http_request *request,
-                                         struct http_header ***headers, char **entity_body);
+static int get_assemble_response_innards(off_t content_length, struct core_object *co, size_t *status,
+                                         struct http_header ***headers);
 
 int perform_method(struct core_object *co, struct state_object *so, struct http_request *request,
                    size_t *status, struct http_header ***headers, char **entity_body)
@@ -167,8 +167,8 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
     database_header = get_header("database", request->extension_headers, request->num_extension_headers);
     if (database_header)
     {
-        db = strcmp(database_header->value, "true") == 0;
         to_lower(database_header->value);
+        db = strcmp(database_header->value, "true") == 0;
     }
     conditional     = get_header(H_IF_MODIFIED_SINCE, request->request_headers, request->num_request_headers) != NULL;
     
@@ -191,6 +191,7 @@ static int http_get(struct core_object *co, struct state_object *so, struct http
 int fs_get(bool conditional, struct core_object *co, struct state_object *so, struct http_request *req,
            size_t *status, struct http_header ***headers, char **entity_body)
 {
+    PRINT_STACK_TRACE(co->tracer);
     char               pathname[BUFSIZ];
     struct stat        st;
     struct http_header *h;
@@ -241,7 +242,7 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
             return 0;
         }
     }
-
+    
     printf("OPEN FILE\n");
     fd = open(pathname, O_RDONLY);
     if (fd == -1)
@@ -262,12 +263,13 @@ int fs_get(bool conditional, struct core_object *co, struct state_object *so, st
     }
     (*entity_body)[st.st_size] = '\0';
     printf("ASSEMBLE HEADERS\n");
-    return get_assemble_response_innards(st.st_size, co, req, headers, entity_body);
+    return get_assemble_response_innards(st.st_size, co, status, headers);
 }
 
 int db_get(bool conditional, struct core_object *co, struct state_object *so, struct http_request *req,
            size_t *status, struct http_header ***headers, char **entity_body)
 {
+    PRINT_STACK_TRACE(co->tracer);
     int                res;
     char               *path;
     char               d_last_modified_str[HTTP_TIME_LEN];
@@ -329,12 +331,13 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
     }
     strcpy(*entity_body, value);
     
-    return get_assemble_response_innards((off_t) strlen(value), co, req, headers, entity_body);
+    return get_assemble_response_innards((off_t) strlen(value), co, NULL, headers);
 }
 
 static int http_head(struct core_object *co, struct state_object *so, struct http_request *req,
                      size_t *status, struct http_header ***headers, char **entity_body)
 {
+    PRINT_STACK_TRACE(co->tracer);
     if (http_get(co, so, req, status, headers, entity_body) == -1)
     {
         return -1;
@@ -361,12 +364,6 @@ static int http_post(struct core_object *co, struct state_object *so, struct htt
     // Read headers to determine if database or file system
     database_header       = get_header("database", request->extension_headers, request->num_extension_headers);
     content_length_header = get_header(H_CONTENT_LENGTH, request->entity_headers, request->num_entity_headers);
-    
-    printf("%s: %s\n", content_length_header->key, content_length_header->value);
-    if (database_header)
-    {
-        printf("%s: %s\n", database_header->key, database_header->value);
-    }
     
     *entity_body = mm_strdup(request->entity_body, co->mm);
     
@@ -527,9 +524,11 @@ static int post_assemble_response_innards(struct core_object *co, struct http_re
     return 0;
 }
 
-static int get_assemble_response_innards(off_t content_length, struct core_object *co, struct http_request *request,
-                                         struct http_header ***headers, char **entity_body)
+static int get_assemble_response_innards(off_t content_length, struct core_object *co, size_t *status,
+                                         struct http_header ***headers)
 {
+    PRINT_STACK_TRACE(co->tracer);
+    
     const int          num_headers = 2;
     struct http_header *h_content_type;
     struct http_header *h_content_length;
@@ -565,6 +564,8 @@ static int get_assemble_response_innards(off_t content_length, struct core_objec
     (*headers)[0] = h_content_length;
     (*headers)[1] = h_content_type;
     (*headers)[2] = NULL;
+    
+    *status = OK_200;
     
     return 0;
 }

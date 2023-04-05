@@ -62,7 +62,7 @@
  */
 #define TEXT_HTML_CONTENT_TYPE "text/html"
 
-#define NUM_CHILD_PROCESSES 8             /** The number of worker processes to be spawned to handle network requests. */
+#define NUM_CHILD_PROCESSES 2             /** The number of worker processes to be spawned to handle network requests. */
 #define CONNECTION_QUEUE 100              /** The number of connections that can be queued on the listening socket. */
 #define MAX_CONNECTIONS 5                 /** The maximum number of connections that can be accepted by the process server. */
 #define POLLFDS_SIZE 2 + MAX_CONNECTIONS  /** The size of the pollfds array. +2 for listen socket and child-to-parent pipe. */
