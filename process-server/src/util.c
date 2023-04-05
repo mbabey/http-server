@@ -394,7 +394,7 @@ int http_time_now(char dst[HTTP_TIME_LEN])
 {
     memset(dst, 0, HTTP_TIME_LEN);
     time_t    now = time(0);
-    struct tm tm  = *gmtime(&now); // NOLINT(concurrency-mt-unsafe): No threads here
+    struct tm tm  = *localtime(&now); // NOLINT(concurrency-mt-unsafe): No threads here
     if (strftime(dst, HTTP_TIME_LEN, HTTP_TIME_FORMAT, &tm) == 0)
     {
         (void) fprintf(stderr, "error getting current HTTP time\n");
