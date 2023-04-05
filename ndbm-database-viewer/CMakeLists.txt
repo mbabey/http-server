@@ -12,11 +12,11 @@ set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(SUPER_DIR process-server)
 set(SOURCE_LIST
         ${SOURCE_DIR}/main.c
-        ../${SUPER_DIR}/${SOURCE_DIR}/manager.c
+        ${SOURCE_DIR}/../../${SUPER_DIR}/src/manager.c
         )
 set(HEADER_LIST
-        ../${SUPER_DIR}/${INCLUDE_DIR}/error-handlers.h
-        ../${SUPER_DIR}/${INCLUDE_DIR}/manager.h
+        ${INCLUDE_DIR}/../../${SUPER_DIR}/include/error-handlers.h
+        ${INCLUDE_DIR}/../../${SUPER_DIR}/include/manager.h
         )
 
 set(SANITIZE TRUE)
