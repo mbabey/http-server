@@ -282,7 +282,7 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
     
     path = req->request_line->request_URI;
     key.dptr  = path;
-    key.dsize = strlen(path);
+    key.dsize = strlen(path) + 1;
     
     res = safe_dbm_fetch(co, DB_NAME, co->so->db_sem, &key, (uint8_t **) &data);
     if (res == -1)
@@ -298,7 +298,7 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
         return 0;
     }
     strcpy(d_last_modified_str, data);
-    value = data + strlen(data) + 2;
+    value = data + strlen(data) + 1;
     
     if (conditional)
     {
@@ -323,7 +323,7 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
         }
     }
     
-    *entity_body = mm_calloc(strlen(value), sizeof(char), co->mm);
+    *entity_body = mm_calloc(strlen(value) + 1, sizeof(char), co->mm);
     if (!*entity_body)
     {
         SET_ERROR(co->err);
@@ -331,7 +331,7 @@ int db_get(bool conditional, struct core_object *co, struct state_object *so, st
     }
     strcpy(*entity_body, value);
     
-    return get_assemble_response_innards((off_t) strlen(value), co, NULL, headers);
+    return get_assemble_response_innards((off_t) strlen(value), co, status, headers);
 }
 
 static int http_head(struct core_object *co, struct state_object *so, struct http_request *req,
