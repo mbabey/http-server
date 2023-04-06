@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(client
+project(ndbm-database-viewer
         VERSION 0.0.1
         DESCRIPTION ""
         LANGUAGES C)
@@ -9,24 +9,14 @@ set(CMAKE_C_STANDARD 17)
 
 set(SOURCE_DIR src)
 set(INCLUDE_DIR include)
+set(SUPER_DIR process-server)
 set(SOURCE_LIST
         ${SOURCE_DIR}/main.c
-        ${SOURCE_DIR}/state.c
-        ${SOURCE_DIR}/util.c
-        ${SOURCE_DIR}/thread.c
-        ${SOURCE_DIR}/run.c
-        ${SOURCE_DIR}/thread.c
-        ${SOURCE_DIR}/log.c
-        ${SOURCE_DIR}/handle.c
+        ../${SUPER_DIR}/${SOURCE_DIR}/manager.c
         )
 set(HEADER_LIST
-        ${INCLUDE_DIR}/state.h
-        ${INCLUDE_DIR}/util.h
-        ${INCLUDE_DIR}/thread.h
-        ${INCLUDE_DIR}/run.h
-        ${INCLUDE_DIR}/thread.h
-        ${INCLUDE_DIR}/log.h
-        ${INCLUDE_DIR}/handle.h
+        ../${SUPER_DIR}/${INCLUDE_DIR}/error_handlers.h
+        ../${SUPER_DIR}/${INCLUDE_DIR}/manager.h
         )
 
 set(SANITIZE TRUE)
@@ -120,8 +110,8 @@ set(DOXYGEN_QUIET YES)
 
 doxygen_add_docs(doxygen
         ${HEADER_LIST}
-        WORKING_DIRECTORY ..
-        COMMENT "Generating Doxygen documentation for client")
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Generating Doxygen documentation for ndbm-database-viewer")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CLANG_TIDY_CHECKS "*")
@@ -146,30 +136,5 @@ set(CLANG_TIDY_CHECKS "${CLANG_TIDY_CHECKS},-clang-analyzer-security.insecureAPI
 set(CLANG_TIDY_CHECKS "${CLANG_TIDY_CHECKS},-android-cloexec-accept")
 set(CMAKE_C_CLANG_TIDY clang-tidy -checks=${CLANG_TIDY_CHECKS};--quiet)
 
-add_executable(client ${SOURCE_LIST})
-target_include_directories(client PRIVATE /usr/local/include)
-add_dependencies(client doxygen)
-
-find_library(LIBDC_ERROR dc_error REQUIRED)
-find_library(LIBDC_ENV dc_env REQUIRED)
-find_library(LIBDC_C dc_c REQUIRED)
-find_library(LIBDC_POSIX dc_posix REQUIRED)
-find_library(LIBDC_UNIX dc_unix REQUIRED)
-find_library(LIBDC_UTIL dc_util REQUIRED)
-find_library(LIBDC_FSM dc_fsm REQUIRED)
-find_library(LIB_CONFIG config REQUIRED)
-find_library(LIBDC_APPLICATION dc_application REQUIRED)
-find_library(MEM_MANAGER mem_manager REQUIRED)
-find_library(PTHREAD pthread REQUIRED)
-
-target_link_libraries(client PUBLIC ${LIBDC_ERROR})
-target_link_libraries(client PUBLIC ${LIBDC_ENV})
-target_link_libraries(client PUBLIC ${LIBDC_C})
-target_link_libraries(client PUBLIC ${LIBDC_POSIX})
-target_link_libraries(client PUBLIC ${LIBDC_UNIX})
-target_link_libraries(client PUBLIC ${LIBDC_UTIL})
-target_link_libraries(client PUBLIC ${LIBDC_FSM})
-target_link_libraries(client PUBLIC ${LIB_CONFIG})
-target_link_libraries(client PUBLIC ${LIBDC_APPLICATION})
-target_link_libraries(client PUBLIC ${MEM_MANAGER})
-target_link_libraries(client PUBLIC ${PTHREAD})
+add_executable(ndbm-database-viewer ${SOURCE_LIST})
+add_dependencies(ndbm-database-viewer doxygen)

@@ -33,6 +33,10 @@
 #define STATUS_CODE_SERVICE_UNAVAILABLE     "503"
 #define REASON_PHRASE_SERVICE_UNAVAILABLE   "Service Unavailable"
 
+/** Number of bytes taken by a status_line struct. */
+#define STATUS_LINE_SIZE(status_line) \
+    (strlen((status_line).version) + SP_SIZE + strlen((status_line).status_code) + SP_SIZE + strlen((status_line).reason_phrase))
+
 /**
  * assemble_status_line
  * <p>
@@ -45,43 +49,77 @@
 static void assemble_status_line(struct core_object *co, struct http_response *response, size_t status);
 
 /**
+ * print_response
+ * <p>
+ * Print the HTTP response.
+ * </p>
+ * @param co the core object
+ * @param response the response
+ */
+void print_response(struct core_object *co, struct http_response *response);
+
+/**
  * serialize_http_response
  * <p>
  * Serialize an HTTP Response object into a byte sequence.
  * </p>
  * @param co the core object
  * @param dst_buffer the destination byte buffer
- * @param src_response the response to be serialized
+ * @param response the response to be serialized
  * @param entity_body_size the size of the entity body in the response
- * @return 0 on success, -1 and set error on failure.
+ * @return size of serial buffer on success, 0 and set error on failure.
  */
-static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer, struct http_response *src_response,
-                                   size_t entity_body_size);
+static size_t serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *response);
 
-int assemble_send_response(struct core_object *co, struct state_object *so, int socket_fd, size_t status,
-                           struct http_header **headers, const char *entity_body, size_t entity_body_size)
+/**
+ * get_header_size_bytes
+ * <p>
+ * Get the number of bytes in the headers.
+ * </p>
+ * @param headers the list of headers
+ * @return the number of bytes in the headers
+ */
+static size_t get_header_size_bytes(struct http_header **headers, TRACER_FUNCTION_AS(tracer));
+
+int assemble_send_response(struct core_object *co, int socket_fd,
+                           size_t status, struct http_header **headers, const char *entity_body)
 {
     PRINT_STACK_TRACE(co->tracer);
     
     struct http_response response;
-    uint8_t *serial_response;
+    size_t               serial_response_size;
+    char                 *serial_response;
+    ssize_t              bytes_sent;
+    size_t               bytes_sent_total;
     
-    // Assemble the status line
+    // Assemble the status line, headers, and body of the response
     assemble_status_line(co, &response, status);
-    
-    // Assemble the headers
-    response.headers = headers;
-    
-    // Assemble the body
+    response.headers     = headers;
     response.entity_body = entity_body;
     
+    print_response(co, &response);
+    
     // Serialize the response
-    if (serialize_http_response(co, &serial_response, &response, entity_body_size) == -1)
+
+    serial_response_size = serialize_http_response(co, &serial_response, &response);
+    if (serial_response_size == 0)
     {
         return -1;
     }
     
-    // Send the (whole) response
+    // Send the response
+    bytes_sent       = 0;
+    bytes_sent_total = 0;
+    while (bytes_sent != -1 && bytes_sent_total <= serial_response_size)
+    {
+        bytes_sent = send(socket_fd, serial_response, serial_response_size, 0);
+        bytes_sent_total += bytes_sent;
+    }
+    if (bytes_sent == -1)
+    {
+        SET_ERROR(co->err);
+        return -1;
+    }
     
     return 0;
 }
@@ -96,103 +134,212 @@ static void assemble_status_line(struct core_object *co, struct http_response *r
     {
         case OK_200:
         {
-            response->status_line.status_code = STATUS_CODE_OK;
+            response->status_line.status_code   = STATUS_CODE_OK;
             response->status_line.reason_phrase = REASON_PHRASE_OK;
             break;
         }
         case CREATED_201:
         {
-            response->status_line.status_code = STATUS_CODE_CREATED;
+            response->status_line.status_code   = STATUS_CODE_CREATED;
             response->status_line.reason_phrase = REASON_PHRASE_CREATED;
             break;
         }
         case ACCEPTED_202:
         {
-            response->status_line.status_code = STATUS_CODE_ACCEPTED;
+            response->status_line.status_code   = STATUS_CODE_ACCEPTED;
             response->status_line.reason_phrase = REASON_PHRASE_ACCEPTED;
             break;
         }
         case NO_CONTENT_204:
         {
-            response->status_line.status_code = STATUS_CODE_NO_CONTENT;
+            response->status_line.status_code   = STATUS_CODE_NO_CONTENT;
             response->status_line.reason_phrase = REASON_PHRASE_NO_CONTENT;
             break;
         }
         case MOVED_PERMANENTLY_301:
         {
-            response->status_line.status_code = STATUS_CODE_MOVED_PERMANENTLY;
+            response->status_line.status_code   = STATUS_CODE_MOVED_PERMANENTLY;
             response->status_line.reason_phrase = REASON_PHRASE_MOVED_PERMANENTLY;
             break;
         }
         case MOVED_TEMPORARILY_302:
         {
-            response->status_line.status_code = STATUS_CODE_MOVED_TEMPORARILY;
+            response->status_line.status_code   = STATUS_CODE_MOVED_TEMPORARILY;
             response->status_line.reason_phrase = REASON_PHRASE_MOVED_TEMPORARILY;
             break;
         }
         case NOT_MODIFIED_304:
         {
-            response->status_line.status_code = STATUS_CODE_NOT_MODIFIED;
+            response->status_line.status_code   = STATUS_CODE_NOT_MODIFIED;
             response->status_line.reason_phrase = REASON_PHRASE_NOT_MODIFIED;
             break;
         }
         case BAD_REQUEST_400:
         {
-            response->status_line.status_code = STATUS_CODE_BAD_REQUEST;
+            response->status_line.status_code   = STATUS_CODE_BAD_REQUEST;
             response->status_line.reason_phrase = REASON_PHRASE_BAD_REQUEST;
             break;
         }
         case UNAUTHORIZED_401:
         {
-            response->status_line.status_code = STATUS_CODE_UNAUTHORIZED;
+            response->status_line.status_code   = STATUS_CODE_UNAUTHORIZED;
             response->status_line.reason_phrase = REASON_PHRASE_UNAUTHORIZED;
             break;
         }
         case FORBIDDEN_403:
         {
-            response->status_line.status_code = STATUS_CODE_FORBIDDEN;
+            response->status_line.status_code   = STATUS_CODE_FORBIDDEN;
             response->status_line.reason_phrase = REASON_PHRASE_FORBIDDEN;
             break;
         }
         case NOT_FOUND_404:
         {
-            response->status_line.status_code = STATUS_CODE_NOT_FOUND;
+            response->status_line.status_code   = STATUS_CODE_NOT_FOUND;
             response->status_line.reason_phrase = REASON_PHRASE_NOT_FOUND;
             break;
         }
-        // 500 is default, located at bottom of switch tree.
+            // 500 is default, located at bottom of switch tree.
         case NOT_IMPLEMENTED_501:
         {
-            response->status_line.status_code = STATUS_CODE_NOT_IMPLEMENTED;
+            response->status_line.status_code   = STATUS_CODE_NOT_IMPLEMENTED;
             response->status_line.reason_phrase = REASON_PHRASE_NOT_IMPLEMENTED;
             break;
         }
         case BAD_GATEWAY_502:
         {
-            response->status_line.status_code = STATUS_CODE_BAD_GATEWAY;
+            response->status_line.status_code   = STATUS_CODE_BAD_GATEWAY;
             response->status_line.reason_phrase = REASON_PHRASE_BAD_GATEWAY;
             break;
         }
         case SERVICE_UNAVAILABLE_503:
         {
-            response->status_line.status_code = STATUS_CODE_SERVICE_UNAVAILABLE;
+            response->status_line.status_code   = STATUS_CODE_SERVICE_UNAVAILABLE;
             response->status_line.reason_phrase = REASON_PHRASE_SERVICE_UNAVAILABLE;
             break;
         }
         case INTERNAL_SERVER_ERROR_500:
         default:
         {
-            response->status_line.status_code = STATUS_CODE_INTERNAL_SERVER_ERROR;
+            response->status_line.status_code   = STATUS_CODE_INTERNAL_SERVER_ERROR;
             response->status_line.reason_phrase = REASON_PHRASE_INTERNAL_SERVER_ERROR;
             break;
         }
     }
 }
 
-static int serialize_http_response(struct core_object *co, uint8_t **dst_buffer, struct http_response *src_response,
-        size_t entity_body_size)
+static size_t serialize_http_response(struct core_object *co, char **dst_buffer, struct http_response *response)
 {
     PRINT_STACK_TRACE(co->tracer);
     
-    return 0;
+    size_t headers_size_bytes;
+    size_t serial_response_size;
+    
+    headers_size_bytes   = get_header_size_bytes(response->headers, co->tracer);
+    serial_response_size = STATUS_LINE_SIZE(response->status_line) + CRLF_SIZE
+                           + headers_size_bytes // Includes CRLF_SIZE
+                           + CRLF_SIZE
+                           + ((response->entity_body) ? strlen(response->entity_body) : 0);
+    
+    *dst_buffer = mm_malloc(serial_response_size, co->mm);
+    if (!*dst_buffer)
+    {
+        SET_ERROR(co->err);
+        return 0;
+    }
+    
+    size_t             byte_offset;
+    struct http_header **headers;
+    
+    byte_offset = 0;
+    
+    // Serialize the status line. strcpy to avoid copying null byte.
+    // Format: HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+    strlcpy((*dst_buffer + byte_offset), response->status_line.version,
+            strlen(response->status_line.version) + 1);
+    byte_offset += strlen(response->status_line.version);
+    
+    strlcpy((*dst_buffer + byte_offset), SP_STR, SP_SIZE + 1);
+    byte_offset += SP_SIZE;
+    
+    strlcpy((*dst_buffer + byte_offset), response->status_line.status_code,
+            strlen(response->status_line.status_code) + 1);
+    byte_offset += strlen(response->status_line.status_code);
+    
+    strlcpy((*dst_buffer + byte_offset), SP_STR, SP_SIZE + 1);
+    byte_offset += SP_SIZE;
+    
+    strlcpy((*dst_buffer + byte_offset), response->status_line.reason_phrase,
+            strlen(response->status_line.reason_phrase) + 1);
+    byte_offset += strlen(response->status_line.reason_phrase);
+    
+    strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE + 1);
+    byte_offset += CRLF_SIZE;
+    // Serialize the headers.
+    // Format: field-name ":" [ field-value ] CRLF
+    if (response->headers)
+    {
+        for (headers = response->headers; *headers; ++headers)
+        {
+            strlcpy((*dst_buffer + byte_offset), (*headers)->key, strlen((*headers)->key) + 1);
+            byte_offset += strlen((*headers)->key);
+            
+            strlcpy((*dst_buffer + byte_offset), COLON_SP_STR, COLON_SP_SIZE + 1);
+            byte_offset += COLON_SP_SIZE;
+            
+            strlcpy((*dst_buffer + byte_offset), (*headers)->value, strlen((*headers)->value) + 1);
+            byte_offset += strlen((*headers)->value);
+            
+            strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE + 1);
+            byte_offset += CRLF_SIZE;
+        }
+    }
+
+    strlcpy((*dst_buffer + byte_offset), CRLF_STR, CRLF_SIZE + 1);
+    byte_offset += CRLF_SIZE;
+    
+    if (response->entity_body)
+    {
+        strlcpy((*dst_buffer + byte_offset), response->entity_body,
+                strlen(response->entity_body) + 1);
+    }
+    
+    return serial_response_size;
+}
+
+void print_response(struct core_object *co, struct http_response *response)
+{
+    PRINT_STACK_TRACE(co->tracer);
+    
+    struct http_header **headers;
+    
+    printf("%s %s %s\r\n", response->status_line.version, response->status_line.status_code,
+           response->status_line.reason_phrase);
+    if (response->headers)
+    {
+        for (headers = response->headers; *headers; ++headers)
+        {
+            printf("%s: %s\r\n", (*headers)->key, (*headers)->value);
+        }
+    }
+    printf("\r\n%s\n", (response->entity_body) ? response->entity_body : "");
+}
+
+static size_t get_header_size_bytes(struct http_header **headers, TRACER_FUNCTION_AS(tracer))
+{
+    PRINT_STACK_TRACE(tracer);
+    
+    if (!headers)
+    {
+        return 0;
+    }
+    
+    size_t header_bytes_total;
+    
+    header_bytes_total = 0;
+    for (; *headers; ++headers)
+    {
+        header_bytes_total += strlen((*headers)->key) + COLON_SP_SIZE + strlen((*headers)->value) + CRLF_SIZE;
+    }
+    
+    return header_bytes_total;
 }

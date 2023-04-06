@@ -1,5 +1,6 @@
-#include "../include/process_server_util.h"
+#include "../include/db.h"
 #include "../include/manager.h"
+#include "../include/process_server_util.h"
 
 #include <request.h>
 
@@ -74,7 +75,7 @@ struct state_object *setup_process_state(struct memory_manager *mm)
     return so;
 }
 
-int open_pipe_semaphores_domain_sockets(struct core_object *co, struct state_object *so)
+int open_pipe_semaphores_domain_sockets_database(struct core_object *co, struct state_object *so)
 {
     PRINT_STACK_TRACE(co->tracer);
     
@@ -106,11 +107,13 @@ static int open_semaphores(struct core_object *co, struct state_object *so)
     sem_t *pipe_write_sem;
     sem_t *domain_read_sem;
     sem_t *domain_write_sem;
+    sem_t *db_write_sem;
     
     // Value 0 will block; value 1 will allow first process to enter, then behave as if value was 0.
     pipe_write_sem   = sem_open(PIPE_WRITE_SEM_NAME, O_CREAT, S_IRUSR | S_IWUSR, 1);
     domain_read_sem  = sem_open(DOMAIN_READ_SEM_NAME, O_CREAT, S_IRUSR | S_IWUSR, 0);
     domain_write_sem = sem_open(DOMAIN_WRITE_SEM_NAME, O_CREAT, S_IRUSR | S_IWUSR, 1);
+    db_write_sem     = sem_open(DB_WRITE_SEM_NAME, O_CREAT, S_IRUSR | S_IWUSR, 1);
     if (pipe_write_sem == SEM_FAILED || domain_read_sem == SEM_FAILED || domain_write_sem == SEM_FAILED)
     {
         SET_ERROR(co->err);
@@ -118,16 +121,19 @@ static int open_semaphores(struct core_object *co, struct state_object *so)
         sem_close(pipe_write_sem);
         sem_close(domain_read_sem);
         sem_close(domain_write_sem);
+        sem_close(db_write_sem);
         // Unlinking an unopened semaphore will return -1 and set errno = ENOENT, which can be ignored.
         sem_unlink(PIPE_WRITE_SEM_NAME);
         sem_unlink(DOMAIN_READ_SEM_NAME);
         sem_unlink(DOMAIN_WRITE_SEM_NAME);
+        sem_unlink(DB_WRITE_SEM_NAME);
         return -1;
     }
     
     so->c_to_p_pipe_sem_write = pipe_write_sem;
     so->domain_sems[READ]  = domain_read_sem;
     so->domain_sems[WRITE] = domain_write_sem;
+    so->db_sem = db_write_sem;
     
     return 0;
 }
@@ -182,11 +188,6 @@ static int c_setup_child(struct core_object *co, struct state_object *so)
     
     so->c_to_p_pipe_fds[READ] = 0;
     so->domain_fds[WRITE]     = 0;
-
-    so->req = init_http_request(co);
-    if (so->req == NULL) {
-        return -1;
-    }
     
     return 0;
 }
@@ -278,14 +279,15 @@ void p_destroy_parent_state(struct core_object *co, struct state_object *so, str
     }
     
     mm_free(co->mm, parent);
-    destroy_http_request(&so->req);
     
     sem_close(so->c_to_p_pipe_sem_write);
     sem_close(so->domain_sems[READ]);
     sem_close(so->domain_sems[WRITE]);
+    sem_close(so->db_sem);
     sem_unlink(PIPE_WRITE_SEM_NAME);
     sem_unlink(DOMAIN_READ_SEM_NAME);
     sem_unlink(DOMAIN_WRITE_SEM_NAME);
+    sem_unlink(DB_WRITE_SEM_NAME);
 }
 
 void c_destroy_child_state(struct core_object *co, struct state_object *so, struct child_struct *child)

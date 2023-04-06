@@ -1,10 +1,14 @@
-#include "../include/objects.h"
+#include "../include/methods.h"
 #include "../include/process_server.h"
 #include "../include/process_server_util.h"
 
+#include <read.h>
+#include <request.h>
+#include <response.h>
+#include <util.h>
+
 #include <arpa/inet.h>
 #include <errno.h>
-#include <mem_manager/manager.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <signal.h>
@@ -80,7 +84,7 @@ static int p_accept_new_connection(struct core_object *co, struct parent_struct 
 static size_t p_get_pollfd_index(const struct pollfd *pollfds);
 
 /**
- * p_read_pipe_reenable_fd
+ * p_read_pipe_close_fd
  * <p>
  * Wait for the read semaphore to be signaled on the child-to-parent pipe. Invert the fd that is passed in the pipe.
  * </p>
@@ -89,7 +93,7 @@ static size_t p_get_pollfd_index(const struct pollfd *pollfds);
  * @param pollfds the array of pollfds
  * @return 0 on success, -1 and set errno on failure.
  */
-static int p_read_pipe_reenable_fd(struct core_object *co, struct state_object *so, struct pollfd *pollfds);
+static int p_read_pipe_close_fd(struct core_object *co, struct state_object *so, struct pollfd *pollfds);
 
 /**
  * p_handle_socket_action
@@ -207,8 +211,14 @@ int setup_process_server(struct core_object *co, struct state_object *so)
     
     co->so = so;
     
-    if (open_pipe_semaphores_domain_sockets(co, so) == -1)
+    if (open_pipe_semaphores_domain_sockets_database(co, so) == -1)
     {
+        return -1;
+    }
+    
+    if (create_dir(WRITE_DIR) == -1)
+    {
+        SET_ERROR(co->err);
         return -1;
     }
     
@@ -283,7 +293,7 @@ static int p_run_poll_loop(struct core_object *co, struct state_object *so, stru
             }
         } else if ((*(pollfds + 1)).revents == POLLIN) // Action on child-to-parent pipe.
         {
-            if (p_read_pipe_reenable_fd(co, so, pollfds) == -1)
+            if (p_read_pipe_close_fd(co, so, pollfds) == -1)
             {
                 return -1;
             }
@@ -373,7 +383,7 @@ static size_t p_get_pollfd_index(const struct pollfd *pollfds)
     return conn_index;
 }
 
-static int p_read_pipe_reenable_fd(struct core_object *co, struct state_object *so, struct pollfd *pollfds)
+static int p_read_pipe_close_fd(struct core_object *co, struct state_object *so, struct pollfd *pollfds)
 {
     PRINT_STACK_TRACE(co->tracer);
     int     fd;
@@ -391,9 +401,10 @@ static int p_read_pipe_reenable_fd(struct core_object *co, struct state_object *
     
     FOR_EACH_SOCKET_POLLFD_p_IN_POLLFDS
     {
-        if (pollfds[p].fd == fd * -1) // pollfd.fd here is negative.
+        if (pollfds[p].fd == fd * -1) // fd in parent will be negative here
         {
-            pollfds[p].fd = pollfds[p].fd * -1; // Invert pollfd.fd so it will be read from in poll loop.
+            pollfds[p].fd *= -1; // Invert to make accurate.
+            p_remove_connection(co, so->parent, pollfds + p, p - 2, pollfds);
         }
     }
     
@@ -571,15 +582,46 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
 {
     PRINT_STACK_TRACE(co->tracer);
     
-    struct http_request request;
+    size_t              status;
+    struct http_header  **headers;
+    char                *entity_body;
+    struct http_request *request;
     
-    // receive and parse http request
+    request = init_http_request(co);
+    if (!request)
+    {
+        return -1;
+    }
     
-    // handle some action dictated by the request
-    // function here should set the status as a number
+    int result = read_request(child->client_fd_local, request, co);
+    if (result == -1)
+    {
+        status      = INTERNAL_SERVER_ERROR_500;
+        entity_body = NULL;
+        headers     = NULL;
+        // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
+        GET_ERROR(co->err);
+    }
     
-    // assemble and send http response
-    // this function takes the status and makes an appropriate response
+    // Short-circuit to prevent execution if read request has error.
+    if (!result && perform_method(co, so, request, &status, &headers, &entity_body) == -1)
+    {
+        // if there is an error, set status to 500
+        status      = INTERNAL_SERVER_ERROR_500;
+        entity_body = NULL;
+        headers     = NULL;
+        // NOLINTNEXTLINE(concurrency-mt-unsafe) : No threads here
+        GET_ERROR(co->err);
+    }
+
+    // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage): Status will be initialized; result is either -1 or 0
+    if (assemble_send_response(co, child->client_fd_local, status, headers, entity_body) == -1)
+    {
+        return -1;
+    }
+    
+    free_http_data(co, headers, entity_body);
+    destroy_http_request(&request, co);
     
     return 0;
 }
@@ -587,7 +629,7 @@ static int c_handle_http_request_response(struct core_object *co, struct state_o
 static int c_get_file_description_from_domain_socket(struct core_object *co, struct state_object *so,
                                                      struct child_struct *child)
 {
-    PRINT_STACK_TRACE(co->tracer);`\
+    PRINT_STACK_TRACE(co->tracer);
     
     ssize_t        bytes_recv;
     struct msghdr  msghdr;

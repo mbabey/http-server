@@ -6,7 +6,7 @@
 /**
  * init_http_request
  * <p>
- * Reads a HTTP 1.0 request from a client socket into a http_request struct.
+ * Allocate memory for an http_request struct in the memory manager.
  * </p>
  * @param co the core object.
  * @return a pointer to a http_request struct on success. NULL on failure.
@@ -28,20 +28,11 @@ void destroy_http_request(struct http_request ** req, struct core_object * co);
  * <p>
  * Reads a HTTP 1.0 header from a client socket into a http_header struct.
  * </p>
+ * @param header_line a whole header line. Example: header_line = "Content-Type: application/json"
  * @param co the core object.
  * @return a pointer to a http_header struct on success. NULL on failure.
  */
-struct http_header * init_http_header(struct core_object * co);
-
-/**
- * destroy_http_header
- * <p>
- * Frees any dynamically allocated memory from an http_header and frees the http_header struct.
- * </p>
- * @param header a pointer to a http_header struct.
- * @param co the core object.
- */
-void destroy_http_header(struct http_header * header, struct core_object * co);
+struct http_header * init_http_header(char * header_line, struct core_object * co);
 
 /**
  * init_http_request_line

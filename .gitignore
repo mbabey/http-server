@@ -3,3 +3,5 @@ cmake-build-debug
 .idea
 build
 log.csv
+db_http*
+dir_http*
